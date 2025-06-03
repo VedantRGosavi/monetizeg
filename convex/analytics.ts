@@ -1,5 +1,16 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
+interface AnalyticsEvent {
+  _id: Id<"analytics">;
+  _creationTime: number;
+  adId: Id<"advertisements">;
+  repositoryId: Id<"repositories">;
+  eventType: 'impression' | 'click' | 'conversion';
+  timestamp: number;
+  // Add other fields as needed
+}
 
 // Record an analytics event
 export const recordEvent = mutation({
@@ -34,23 +45,25 @@ export const getAnalyticsByAd = query({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db
-      .query("analytics")
-      .withIndex("by_ad", (q) => q.eq("adId", args.adId));
 
-    const events = await query.collect();
+
+    const query = ctx.db
+      .query("analytics")
+      .withIndex("by_ad", (q) => q.eq("adId", args.adId as Id<"advertisements">));
+
+    const events = await query.collect() as AnalyticsEvent[];
 
     // Filter by date range if provided
-    const filteredEvents = events.filter(event => {
+    const filteredEvents = events.filter((event) => {
       if (args.startDate && event.timestamp < args.startDate) return false;
       if (args.endDate && event.timestamp > args.endDate) return false;
       return true;
     });
 
     // Aggregate data
-    const impressions = filteredEvents.filter(e => e.eventType === "impression").length;
-    const clicks = filteredEvents.filter(e => e.eventType === "click").length;
-    const conversions = filteredEvents.filter(e => e.eventType === "conversion").length;
+    const impressions = filteredEvents.filter((e: any) => e.eventType === "impression").length;
+    const clicks = filteredEvents.filter((e: any) => e.eventType === "click").length;
+    const conversions = filteredEvents.filter((e: any) => e.eventType === "conversion").length;
 
     return {
       impressions,
@@ -71,14 +84,14 @@ export const getAnalyticsByRepository = query({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db
+    const query = ctx.db
       .query("analytics")
-      .withIndex("by_repository", (q) => q.eq("repositoryId", args.repositoryId));
+      .withIndex("by_repository", (q) => q.eq("repositoryId", args.repositoryId as Id<"repositories">));
 
-    const events = await query.collect();
+    const events = await query.collect() as AnalyticsEvent[];
 
     // Filter by date range if provided
-    const filteredEvents = events.filter(event => {
+    const filteredEvents = events.filter((event) => {
       if (args.startDate && event.timestamp < args.startDate) return false;
       if (args.endDate && event.timestamp > args.endDate) return false;
       return true;
@@ -114,12 +127,12 @@ export const getDailyAnalytics = query({
     if (args.adId) {
       events = await ctx.db
         .query("analytics")
-        .withIndex("by_ad", (q) => q.eq("adId", args.adId))
+        .withIndex("by_ad", (q) => q.eq("adId", args.adId as Id<"advertisements">))
         .collect();
     } else if (args.repositoryId) {
       events = await ctx.db
         .query("analytics")
-        .withIndex("by_repository", (q) => q.eq("repositoryId", args.repositoryId))
+        .withIndex("by_repository", (q) => q.eq("repositoryId", args.repositoryId as Id<"repositories">))
         .collect();
     } else {
       events = await ctx.db.query("analytics").collect();
@@ -133,12 +146,19 @@ export const getDailyAnalytics = query({
     // Group by day
     const dailyData: Record<string, { impressions: number; clicks: number; conversions: number }> = {};
 
-    filteredEvents.forEach(event => {
+    // Type assertion for event type
+    filteredEvents.forEach((event: AnalyticsEvent) => {
       const date = new Date(event.timestamp).toISOString().split('T')[0];
       if (!dailyData[date]) {
         dailyData[date] = { impressions: 0, clicks: 0, conversions: 0 };
       }
-      dailyData[date][event.eventType]++;
+      if (event.eventType === 'impression') {
+        dailyData[date].impressions++;
+      } else if (event.eventType === 'click') {
+        dailyData[date].clicks++;
+      } else if (event.eventType === 'conversion') {
+        dailyData[date].conversions++;
+      }
     });
 
     return Object.entries(dailyData).map(([date, data]) => ({

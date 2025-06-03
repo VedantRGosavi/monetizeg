@@ -35,7 +35,7 @@ export const getPaymentsByUser = query({
     type: v.optional(v.union(v.literal("earning"), v.literal("payout"), v.literal("subscription"))),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db
+    const query = ctx.db
       .query("payments")
       .withIndex("by_user", (q) => q.eq("userId", args.userId));
 

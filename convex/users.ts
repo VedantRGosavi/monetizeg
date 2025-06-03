@@ -64,6 +64,7 @@ export const updateUser = mutation({
       throw new Error("User not found");
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { clerkId, ...updateData } = args;
     await ctx.db.patch(user._id, {
       ...updateData,
