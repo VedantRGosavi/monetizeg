@@ -44,8 +44,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Note: We need to include API routes for proper auth handling
+     * - sign-in (sign in page)
+     * - sign-up (sign up page)
+     * - auth (auth pages)
+     * - api/auth (auth API routes)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sign-in|sign-up|auth|api/auth).*)',
   ],
 };
