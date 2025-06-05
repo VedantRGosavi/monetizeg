@@ -44,16 +44,6 @@ const nextConfig = {
       },
     ];
   },
-  // Redirect configuration for production domain
-  async redirects() {
-    return [
-      {
-        source: '/dashboard',
-        destination: '/dashboard/repositories',
-        permanent: false,
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;
