@@ -9,22 +9,25 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     // Fixes npm packages that depend on Node.js built-ins
     if (!isServer) {
+      // Simple approach to handle Natural.js webworker-threads warning
       config.resolve.fallback = {
         ...config.resolve.fallback,
+        // Core Node.js modules needed for the app
         fs: false,
         stream: require.resolve('stream-browserify'),
         zlib: require.resolve('browserify-zlib'),
-        net: false,
-        tls: false,
-        dns: false,
-        child_process: false,
-        // Add fallback for Natural.js dependencies
+        
+        // Natural.js specific issue - mark as false to prevent warning
         'webworker-threads': false,
-        // Other potential Natural.js dependencies
-        worker_threads: false,
-        'aws-sdk': false,
-        'lru-cache': false,
       };
+      
+      // Mark the specific problematic module as ignored
+      config.plugins.push(
+        new config.webpack.IgnorePlugin({
+          resourceRegExp: /^webworker-threads$/,
+          contextRegExp: /natural/,
+        })
+      );
     }
     return config;
   },
