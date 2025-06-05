@@ -43,7 +43,7 @@ export class UserService {
   // Create or update user with authentication required
   static async createOrUpdateUser(clerkUser: CreateUserData): Promise<User> {
     // Get auth context - will throw if unauthorized
-    const { prisma: authPrisma, userId } = await getPrismaWithAuth()
+    await getPrismaWithAuth()
     
     const email = clerkUser.emailAddresses[0]?.emailAddress
     if (!email) {

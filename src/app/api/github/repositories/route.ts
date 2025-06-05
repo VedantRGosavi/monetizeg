@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getRepositories } from '@/lib/db';
 import { UserService } from '@/lib/services/user.service';
@@ -24,7 +24,7 @@ interface GitHubRepo {
   pushed_at: string | null;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verify user is authenticated
     const { userId } = await auth();
