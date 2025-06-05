@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from '@/components/11_components_ui';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function PricingPage() {
   const { isSignedIn } = useUser();
@@ -46,9 +47,15 @@ export default function PricingPage() {
 
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center p-6">
-        <div className="text-2xl font-mono font-semibold text-white">
-          monetizeG
-        </div>
+        <Link 
+          href="/" 
+          className="flex items-center space-x-2 text-2xl font-mono font-semibold text-white hover:text-white/80 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>monetizeG</span>
+        </Link>
         <div className="flex gap-4">
           {isSignedIn ? (
             <Button variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20">Dashboard</Button>

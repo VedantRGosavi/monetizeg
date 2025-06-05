@@ -63,10 +63,17 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="absolute bottom-8 left-0 w-full flex justify-center gap-6 text-white/40 text-xs lowercase">
+      <footer className="absolute bottom-8 left-0 w-full flex justify-center gap-6 text-white/40 text-xs lowercase z-10">
         <Link href="/about" className="hover:underline">about monetizeg</Link>
         <span>&bull;</span>
-        <Link href="/contact" className="hover:underline">contact us</Link>
+        <a 
+          href="mailto:vedantgosavi20@gmail.com?subject=monetizeG Inquiry" 
+          className="hover:underline"
+        >
+          contact us
+        </a>
+        <span>&bull;</span>
+        <Link href="/pricing" className="hover:underline">pricing</Link>
       </footer>
       
       <style jsx global>{`
