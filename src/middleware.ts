@@ -13,16 +13,14 @@ const isProtectedApiRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { hostname, protocol } = req.nextUrl;
-  
-  // Force HTTPS in production
-  if (hostname === 'monetizeg.dev' && protocol === 'http:') {
-    return NextResponse.redirect(`https://monetizeg.dev${req.nextUrl.pathname}${req.nextUrl.search}`);
-  }
+  const { hostname } = req.nextUrl;
   
   // Redirect www to non-www
-  if (hostname === 'www.monetizeg.dev') {
-    return NextResponse.redirect(`https://monetizeg.dev${req.nextUrl.pathname}${req.nextUrl.search}`);
+  if (hostname.startsWith('www.')) {
+    return NextResponse.redirect(
+      `https://${hostname.replace('www.', '')}${req.nextUrl.pathname}${req.nextUrl.search}`,
+      { status: 301 }
+    );
   }
 
   // Handle Clerk authentication for protected routes and API routes
@@ -30,13 +28,11 @@ export default clerkMiddleware(async (auth, req) => {
     await auth.protect();
   }
   
-  // Add security headers for production
+  // Add security headers
   const response = NextResponse.next();
-  if (hostname === 'monetizeg.dev') {
-    response.headers.set('X-DNS-Prefetch-Control', 'on');
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-  }
+  response.headers.set('X-DNS-Prefetch-Control', 'on');
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
   
   return response;
 });
