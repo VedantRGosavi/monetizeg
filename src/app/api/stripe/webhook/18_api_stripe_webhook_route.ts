@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
             session.subscription as string
           );
           
-          // TODO: Update user subscription in Convex database
+          // TODO: Update user subscription in database
           console.log('Subscription created:', subscription.id);
         }
         break;
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
         
-        // TODO: Update subscription status in Convex database
+        // TODO: Update subscription status in database
         console.log('Subscription updated:', subscription.id);
         break;
       }
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         
-        // TODO: Cancel subscription in Convex database
+        // TODO: Cancel subscription in database
         console.log('Subscription canceled:', subscription.id);
         break;
       }
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
         
-        // TODO: Record payment in Convex database
+        // TODO: Record payment in database
         console.log('Payment succeeded:', invoice.id);
         break;
       }

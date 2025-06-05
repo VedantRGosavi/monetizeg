@@ -1,331 +1,242 @@
-import { neon } from '@neondatabase/serverless';
-import { auth } from '@clerk/nextjs/server';
+// NEW PRISMA-BASED DATABASE API
+// This file replaces src/lib/db.ts with proper Prisma integration for Neon DB
 
-const sql = neon(process.env.DATABASE_URL!);
+import { UserService, type CreateUserData } from './services/user.service'
+import { RepositoryService, type CreateRepositoryData, type UpdateRepositoryData } from './services/repository.service'
+import { CampaignService, type CreateCampaignData, type UpdateCampaignData } from './services/campaign.service'
+import { PaymentService, type CreatePaymentData } from './services/payment.service'
 
-// Database connection with Clerk user context
-export async function getDbWithAuth() {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error('Unauthorized');
-  }
+// Re-export all types for compatibility
+export type { CreateUserData, CreateRepositoryData, UpdateRepositoryData, CreateCampaignData, UpdateCampaignData, CreatePaymentData }
 
-  // Set the current user ID for RLS policies
-  await sql`SELECT set_config('app.current_user_id', ${userId}, true)`;
-  
-  return { sql, userId };
+// =======================
+// USER OPERATIONS
+// =======================
+
+// Initial user creation (no auth required) - maintaining compatibility with existing API
+export async function createInitialUser(clerkUser: CreateUserData) {
+  return await UserService.createOrUpdateInitialUser(clerkUser)
 }
 
-// Initial user creation (no auth required)
-export async function createInitialUser(clerkUser: {
-  id: string;
-  emailAddresses: Array<{ emailAddress: string }>;
-  firstName?: string | null;
-  lastName?: string | null;
-  imageUrl?: string;
-}) {
-  const email = clerkUser.emailAddresses[0]?.emailAddress;
-  const name = clerkUser.firstName && clerkUser.lastName 
-    ? `${clerkUser.firstName} ${clerkUser.lastName}` 
-    : clerkUser.firstName || clerkUser.lastName || null;
-
-  const result = await sql`
-    INSERT INTO users (clerk_id, email, name, avatar_url)
-    VALUES (${clerkUser.id}, ${email}, ${name}, ${clerkUser.imageUrl})
-    ON CONFLICT (clerk_id) 
-    DO UPDATE SET 
-      email = EXCLUDED.email,
-      name = EXCLUDED.name,
-      avatar_url = EXCLUDED.avatar_url,
-      updated_at = now()
-    RETURNING *
-  `;
-
-  return result[0];
+// User management (requires auth) - maintaining compatibility with existing API
+export async function createOrUpdateUser(clerkUser: CreateUserData) {
+  return await UserService.createOrUpdateUser(clerkUser)
 }
 
-// User management (requires auth)
-export async function createOrUpdateUser(clerkUser: {
-  id: string;
-  emailAddresses: Array<{ emailAddress: string }>;
-  firstName?: string | null;
-  lastName?: string | null;
-  imageUrl?: string;
-}) {
-  // Try to get auth context, if it fails, use initial creation
-  try {
-    const { sql: authSql } = await getDbWithAuth();
-    
-    const email = clerkUser.emailAddresses[0]?.emailAddress;
-    const name = clerkUser.firstName && clerkUser.lastName 
-      ? `${clerkUser.firstName} ${clerkUser.lastName}` 
-      : clerkUser.firstName || clerkUser.lastName || null;
-
-    const result = await authSql`
-      INSERT INTO users (clerk_id, email, name, avatar_url)
-      VALUES (${clerkUser.id}, ${email}, ${name}, ${clerkUser.imageUrl})
-      ON CONFLICT (clerk_id) 
-      DO UPDATE SET 
-        email = EXCLUDED.email,
-        name = EXCLUDED.name,
-        avatar_url = EXCLUDED.avatar_url,
-        updated_at = now()
-      RETURNING *
-    `;
-
-    return result[0];
-  } catch (error) {
-    // If auth fails (user not yet authenticated), use initial creation
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return await createInitialUser(clerkUser);
-    }
-    throw error;
-  }
-}
-
+// Get current authenticated user
 export async function getCurrentUser() {
-  try {
-    const { sql, userId } = await getDbWithAuth();
-    
-    const result = await sql`
-      SELECT * FROM users WHERE clerk_id = ${userId}
-    `;
-
-    return result[0] || null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
+  return await UserService.getCurrentUser()
 }
 
-// Get user by Clerk ID without auth requirement (for initial setup)
+// Get user by Clerk ID without auth requirement
 export async function getUserByClerkId(clerkId: string) {
-  try {
-    const result = await sql`
-      SELECT * FROM users WHERE clerk_id = ${clerkId}
-    `;
-
-    return result[0] || null;
-  } catch (error) {
-    console.error('Error getting user by clerk ID:', error);
-    return null;
-  }
+  return await UserService.getUserByClerkId(clerkId)
 }
 
-// Campaign operations
+// =======================
+// CAMPAIGN OPERATIONS
+// =======================
+
+// Create a new campaign - maintaining compatibility
 export async function createCampaign(data: {
-  name: string;
-  description?: string;
-  budgetTotal: number;
-  budgetDailyLimit?: number;
-  startDate: string;
-  endDate?: string;
+  name: string
+  description?: string
+  budgetTotal: number
+  budgetDailyLimit?: number
+  startDate: string
+  endDate?: string
 }) {
-  const { sql } = await getDbWithAuth();
-  const user = await getCurrentUser();
-  
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  const result = await sql`
-    INSERT INTO campaigns (user_id, name, description, budget_total, budget_daily_limit, start_date, end_date)
-    VALUES (${user.id}, ${data.name}, ${data.description}, ${data.budgetTotal}, ${data.budgetDailyLimit}, ${data.startDate}, ${data.endDate})
-    RETURNING *
-  `;
-
-  return result[0];
+  return await CampaignService.createCampaign(data)
 }
 
+// Get all campaigns for current user
 export async function getCampaigns() {
-  const { sql } = await getDbWithAuth();
-  
-  const result = await sql`
-    SELECT * FROM campaigns 
-    ORDER BY created_at DESC
-  `;
-
-  return result;
+  return await CampaignService.getCampaigns()
 }
 
+// Update campaign - maintaining compatibility with existing API
 export async function updateCampaign(id: string, data: Partial<{
-  name: string;
-  description: string;
-  status: string;
-  budgetTotal: number;
-  budgetDailyLimit: number;
-  startDate: string;
-  endDate: string;
+  name: string
+  description: string
+  status: string
+  budgetTotal: number
+  budgetDailyLimit: number
+  startDate: string
+  endDate: string
 }>) {
-  const { sql } = await getDbWithAuth();
-  
-  // Build individual update fields
-  const fieldsToUpdate = [];
-  if (data.name !== undefined) fieldsToUpdate.push('name');
-  if (data.description !== undefined) fieldsToUpdate.push('description');
-  if (data.status !== undefined) fieldsToUpdate.push('status');
-  if (data.budgetTotal !== undefined) fieldsToUpdate.push('budgetTotal');
-  if (data.budgetDailyLimit !== undefined) fieldsToUpdate.push('budgetDailyLimit');
-  if (data.startDate !== undefined) fieldsToUpdate.push('startDate');
-  if (data.endDate !== undefined) fieldsToUpdate.push('endDate');
-  
-  if (fieldsToUpdate.length === 0) {
-    throw new Error('No fields to update');
-  }
-
-  const result = await sql`
-    UPDATE campaigns 
-    SET name = COALESCE(${data.name}, name),
-        description = COALESCE(${data.description}, description),
-        status = COALESCE(${data.status}, status),
-        budget_total = COALESCE(${data.budgetTotal}, budget_total),
-        budget_daily_limit = COALESCE(${data.budgetDailyLimit}, budget_daily_limit),
-        start_date = COALESCE(${data.startDate}, start_date),
-        end_date = COALESCE(${data.endDate}, end_date),
-        updated_at = now()
-    WHERE id = ${id}
-    RETURNING *
-  `;
-
-  return result[0];
+  return await CampaignService.updateCampaign(id, {
+    name: data.name,
+    description: data.description,
+    status: data.status as 'draft' | 'active' | 'paused' | 'completed',
+    budgetTotal: data.budgetTotal,
+    budgetDailyLimit: data.budgetDailyLimit,
+    startDate: data.startDate,
+    endDate: data.endDate,
+  })
 }
 
-// Repository operations
+// =======================
+// REPOSITORY OPERATIONS
+// =======================
+
+// Create a repository - maintaining compatibility
 export async function createRepository(data: {
-  fullName: string;
-  description?: string;
-  stars?: number;
-  forks?: number;
-  language?: string;
-  isPrivate?: boolean;
+  fullName: string
+  description?: string
+  stars?: number
+  forks?: number
+  language?: string
+  isPrivate?: boolean
 }) {
-  const { sql } = await getDbWithAuth();
-  const user = await getCurrentUser();
-  
-  // If user doesn't exist, throw a clear error
-  if (!user) {
-    throw new Error('User not found in database. Please refresh the page and try again.');
-  }
-
-  // Check if repository already exists for this user
-  const existingRepo = await sql`
-    SELECT id FROM repositories 
-    WHERE user_id = ${user.id} AND full_name = ${data.fullName}
-  `;
-
-  if (existingRepo.length > 0) {
-    throw new Error(`Repository ${data.fullName} is already connected`);
-  }
-
-  const result = await sql`
-    INSERT INTO repositories (user_id, full_name, description, stars, forks, language, is_private)
-    VALUES (${user.id}, ${data.fullName}, ${data.description}, ${data.stars || 0}, ${data.forks || 0}, ${data.language}, ${data.isPrivate || false})
-    RETURNING *
-  `;
-
-  return result[0];
+  return await RepositoryService.createRepository(data)
 }
 
+// Get all repositories for current user
 export async function getRepositories() {
-  const { sql } = await getDbWithAuth();
-  
-  // Check if user exists first
-  const user = await getCurrentUser();
-  if (!user) {
-    // Return empty array if user doesn't exist yet
-    return [];
-  }
-  
-  const result = await sql`
-    SELECT * FROM repositories 
-    WHERE user_id = ${user.id}
-    ORDER BY created_at DESC
-  `;
-
-  return result;
+  return await RepositoryService.getRepositories()
 }
 
+// Update repository - maintaining compatibility with existing snake_case API
 export async function updateRepository(id: string, data: Partial<{
-  is_monetized: boolean;
-  ad_placement_enabled: boolean;
-  ad_placement_max_ads: number;
-  ad_placement_position: string;
-  ad_placement_categories: string[];
+  is_monetized: boolean
+  ad_placement_enabled: boolean
+  ad_placement_max_ads: number
+  ad_placement_position: string
+  ad_placement_categories: string[]
 }>) {
-  const { sql } = await getDbWithAuth();
-  
-  // Build individual update fields
-  const fieldsToUpdate = [];
-  if (data.is_monetized !== undefined) fieldsToUpdate.push('is_monetized');
-  if (data.ad_placement_enabled !== undefined) fieldsToUpdate.push('ad_placement_enabled');
-  if (data.ad_placement_max_ads !== undefined) fieldsToUpdate.push('ad_placement_max_ads');
-  if (data.ad_placement_position !== undefined) fieldsToUpdate.push('ad_placement_position');
-  if (data.ad_placement_categories !== undefined) fieldsToUpdate.push('ad_placement_categories');
-  
-  if (fieldsToUpdate.length === 0) {
-    throw new Error('No fields to update');
-  }
-
-  const result = await sql`
-    UPDATE repositories 
-    SET is_monetized = COALESCE(${data.is_monetized}, is_monetized),
-        ad_placement_enabled = COALESCE(${data.ad_placement_enabled}, ad_placement_enabled),
-        ad_placement_max_ads = COALESCE(${data.ad_placement_max_ads}, ad_placement_max_ads),
-        ad_placement_position = COALESCE(${data.ad_placement_position}, ad_placement_position),
-        ad_placement_categories = COALESCE(${JSON.stringify(data.ad_placement_categories) || null}, ad_placement_categories::text)::text[],
-        updated_at = now()
-    WHERE id = ${id}
-    RETURNING *
-  `;
-
-  return result[0];
+  return await RepositoryService.updateRepository(id, {
+    isMonetized: data.is_monetized,
+    adPlacementEnabled: data.ad_placement_enabled,
+    adPlacementMaxAds: data.ad_placement_max_ads,
+    adPlacementPosition: data.ad_placement_position,
+    adPlacementCategories: data.ad_placement_categories,
+  })
 }
 
-// Payment operations
+// =======================
+// PAYMENT OPERATIONS
+// =======================
+
+// Create a payment - maintaining compatibility
 export async function createPayment(data: {
-  amount: number;
-  currency?: string;
-  type: 'earning' | 'payout' | 'subscription';
-  description?: string;
-  metadata?: Record<string, unknown>;
-  stripePaymentIntentId?: string;
+  amount: number
+  currency?: string
+  type: 'earning' | 'payout' | 'subscription'
+  description?: string
+  metadata?: Record<string, unknown>
+  stripePaymentIntentId?: string
 }) {
-  const { sql } = await getDbWithAuth();
-  const user = await getCurrentUser();
-  
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  const result = await sql`
-    INSERT INTO payments (user_id, amount, currency, type, description, metadata, stripe_payment_intent_id)
-    VALUES (${user.id}, ${data.amount}, ${data.currency || 'USD'}, ${data.type}, ${data.description}, ${JSON.stringify(data.metadata || {})}, ${data.stripePaymentIntentId})
-    RETURNING *
-  `;
-
-  return result[0];
+  return await PaymentService.createPayment(data)
 }
 
+// Get all payments for current user
 export async function getPayments() {
-  const { sql } = await getDbWithAuth();
-  
-  const result = await sql`
-    SELECT * FROM payments 
-    ORDER BY created_at DESC
-  `;
-
-  return result;
+  return await PaymentService.getPayments()
 }
 
-export async function updatePaymentStatus(id: string, status: 'pending' | 'completed' | 'failed' | 'cancelled', processedAt?: string) {
-  const { sql } = await getDbWithAuth();
-  
-  const result = await sql`
-    UPDATE payments 
-    SET status = ${status}, processed_at = ${processedAt || null}, updated_at = now()
-    WHERE id = ${id}
-    RETURNING *
-  `;
+// Update payment status - maintaining compatibility
+export async function updatePaymentStatus(
+  id: string, 
+  status: 'pending' | 'completed' | 'failed' | 'cancelled', 
+  processedAt?: string
+) {
+  const processedDate = processedAt ? new Date(processedAt) : undefined
+  return await PaymentService.updatePaymentStatus(id, status, processedDate)
+}
 
-  return result[0];
+// =======================
+// ENHANCED OPERATIONS (New features with Prisma)
+// =======================
+
+// Enhanced user operations
+export async function getUserWithRelations(clerkId: string) {
+  return await UserService.getUserWithRelations(clerkId)
+}
+
+// Enhanced repository operations
+export async function getRepositoryById(id: string) {
+  return await RepositoryService.getRepositoryById(id)
+}
+
+export async function getRepositoryMetrics(repositoryId: string, days?: number) {
+  return await RepositoryService.getRepositoryMetrics(repositoryId, days)
+}
+
+// Enhanced campaign operations
+export async function getCampaignById(id: string) {
+  return await CampaignService.getCampaignById(id)
+}
+
+export async function getCampaignMetrics(campaignId: string) {
+  return await CampaignService.getCampaignMetrics(campaignId)
+}
+
+export async function getActiveCampaignsWithBudget() {
+  return await CampaignService.getActiveCampaignsWithBudget()
+}
+
+// Enhanced payment operations
+export async function getEarningsSummary() {
+  return await PaymentService.getEarningsSummary()
+}
+
+export async function getUserBalance() {
+  return await PaymentService.getUserBalance()
+}
+
+export async function createPayoutRequest(amount: number, description?: string) {
+  return await PaymentService.createPayoutRequest(amount, description)
+}
+
+export async function recordAdRevenue(data: {
+  repositoryId: string
+  campaignId: string
+  adPlacementId: string
+  amount: number
+  description?: string
+}) {
+  return await PaymentService.recordAdRevenue(data)
+}
+
+// =======================
+// DATABASE HEALTH & UTILITIES
+// =======================
+
+// Database connection health check
+export async function checkDatabaseHealth() {
+  try {
+    // Use a simple query to check Prisma connection to Neon DB
+    await UserService.getCurrentUser()
+    return { status: 'healthy', timestamp: new Date().toISOString() }
+  } catch (error) {
+    console.error('Database health check failed:', error)
+    return { status: 'unhealthy', error: error instanceof Error ? error.message : 'Unknown error', timestamp: new Date().toISOString() }
+  }
+}
+
+// Migration utilities for transitioning from old raw SQL
+export async function validateDatabaseSchema() {
+  try {
+    // This would validate that all expected tables and relationships exist
+    // For now, we'll do a basic check by attempting to query each main model
+    await Promise.all([
+      UserService.getCurrentUser(),
+      RepositoryService.getRepositories(),
+      CampaignService.getCampaigns(),
+      PaymentService.getPayments(),
+    ])
+    return { valid: true, message: 'All database operations successful' }
+  } catch (error) {
+    return { valid: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+// =======================
+// DEPRECATED FUNCTIONS
+// =======================
+
+// Legacy function for backward compatibility - will be removed in future version
+export async function getDbWithAuth() {
+  console.warn('DEPRECATED: getDbWithAuth() is deprecated. Use the new service-based approach.')
+  throw new Error('This function has been replaced with Prisma-based services. Please update your code to use the new UserService, RepositoryService, CampaignService, or PaymentService.')
 } 

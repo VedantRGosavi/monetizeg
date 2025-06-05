@@ -1,7 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useConvexUser } from '@/lib/hooks/use-convex-user';
+import { useUserData } from '@/lib/hooks/use-user-data';
 import Link from 'next/link';
 import { Button, Card, CardHeader, CardContent, CardTitle, Badge } from '@/components/11_components_ui';
 
@@ -25,8 +24,7 @@ interface Payment {
 }
 
 export default function PayoutsPage() {
-  const { isSignedIn } = useUser();
-  const { isLoading } = useConvexUser();
+  const { isSignedIn, isLoading } = useUserData();
   
   // Temporary static data until PostgreSQL is implemented
   const payments: Payment[] = [];

@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     let connectedRepoNames = new Set<string>();
     try {
       const connectedRepos = await getRepositories();
-      connectedRepoNames = new Set(connectedRepos.map(repo => repo.full_name));
+      connectedRepoNames = new Set(connectedRepos.map(repo => repo.fullName));
     } catch (error) {
       // If user not found or other error, just continue without marking connected repos
       console.log('Could not fetch connected repositories:', error);

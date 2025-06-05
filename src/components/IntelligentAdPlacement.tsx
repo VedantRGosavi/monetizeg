@@ -7,9 +7,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 interface Repository {
   id: string;
   fullName: string;
-  description?: string;
+  description: string | null;
   stars: number;
-  language: string;
+  language: string | null;
   isMonetized: boolean;
   adPlacementEnabled: boolean;
 }

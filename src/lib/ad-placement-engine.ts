@@ -42,7 +42,7 @@ export interface PlacementRecommendation {
 export interface PlacementContext {
   repositoryId: string;
   repositoryStars: number;
-  repositoryLanguage: string;
+  repositoryLanguage: string | null;
   contentAnalysis: ContentAnalysisResult;
   maxAds: number;
   allowedFormats: string[];
@@ -503,7 +503,9 @@ ${description}
   /**
    * Check if framework is relevant to language
    */
-  private isFrameworkRelevantToLanguage(framework: string, language: string): boolean {
+  private isFrameworkRelevantToLanguage(framework: string, language: string | null): boolean {
+    if (!language) return false;
+
     const relevanceMap: Record<string, string[]> = {
       javascript: ['react', 'vue', 'angular', 'express', 'next', 'gatsby', 'svelte'],
       typescript: ['react', 'vue', 'angular', 'express', 'next', 'nest'],

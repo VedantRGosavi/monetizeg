@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable server-side rendering for Convex API routes
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',

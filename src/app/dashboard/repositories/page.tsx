@@ -1,15 +1,13 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useConvexUser } from '@/lib/hooks/use-convex-user';
+import { useUserData } from '@/lib/hooks/use-user-data';
 import { useRepositories, type Repository } from '@/lib/hooks/use-repositories';
 import { useGitHub, type GitHubRepository } from '@/lib/hooks/use-github';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function RepositoriesPage() {
-  const { isSignedIn } = useUser();
-  const { isLoading } = useConvexUser();
+  const { isSignedIn, isLoading } = useUserData();
   const { repositories, createRepository } = useRepositories();
   const { 
     repositories: githubRepos, 

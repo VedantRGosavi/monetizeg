@@ -1,9 +1,10 @@
-import * as natural from 'natural';
+import { WordTokenizer, PorterStemmer } from 'natural';
 import Sentiment from 'sentiment';
 import * as crypto from 'crypto-js';
 
 // Initialize NLP tools
 const sentiment = new Sentiment();
+const tokenizer = new WordTokenizer();
 
 // Technology keywords database
 const TECH_KEYWORDS = {
@@ -76,7 +77,7 @@ export interface ContentAnalysisResult {
     wordCount: number;
   }>;
   codeBlocks: Array<{
-    language: string;
+    language: string | null;
     startLine: number;
     endLine: number;
     lineCount: number;
@@ -94,8 +95,7 @@ export interface ContentAnalysisResult {
 }
 
 export class ContentAnalysisService {
-  private tokenizer = new natural.WordTokenizer();
-  private stemmer = natural.PorterStemmer;
+  private stemmer = PorterStemmer;
   
   /**
    * Analyze repository README content
@@ -188,7 +188,7 @@ export class ContentAnalysisService {
       const sectionContent = lines
         .slice(section.startLine, section.endLine + 1)
         .join(' ');
-      section.wordCount = this.tokenizer.tokenize(sectionContent)?.length || 0;
+      section.wordCount = tokenizer.tokenize(sectionContent)?.length || 0;
     });
     
     return sections;
@@ -246,7 +246,7 @@ export class ContentAnalysisService {
     tools: Array<{ name: string; confidence: number }>;
   } {
     const contentLower = content.toLowerCase();
-    const tokens = this.tokenizer.tokenize(contentLower) || [];
+    const tokens = tokenizer.tokenize(contentLower) || [];
     
     const detectInCategory = (keywords: Record<string, string[]>) => {
       const results: Array<{ name: string; confidence: number }> = [];
@@ -294,7 +294,7 @@ export class ContentAnalysisService {
    */
   private classifyTopics(content: string): Array<{ name: string; confidence: number }> {
     const contentLower = content.toLowerCase();
-    const tokens = this.tokenizer.tokenize(contentLower) || [];
+    const tokens = tokenizer.tokenize(contentLower) || [];
     const results: Array<{ name: string; confidence: number }> = [];
     
     Object.entries(TOPIC_KEYWORDS).forEach(([topic, keywords]) => {
@@ -340,7 +340,7 @@ export class ContentAnalysisService {
    * Calculate content complexity score
    */
   private calculateComplexity(content: string): number {
-    const tokens = this.tokenizer.tokenize(content) || [];
+    const tokens = tokenizer.tokenize(content) || [];
     const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
     
     // Factors contributing to complexity

@@ -1,7 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useConvexUser } from '../../../../src/lib/hooks/use-convex-user';
+import { useUserData } from '@/lib/hooks/use-user-data';
 import { useCampaigns, type Campaign } from '@/lib/hooks/use-campaigns';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -13,8 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function CampaignsPage() {
-  const { isSignedIn } = useUser();
-  const { isLoading } = useConvexUser();
+  const { isSignedIn, isLoading } = useUserData();
   const { campaigns, createCampaign: createCampaignDb } = useCampaigns();
   const [showCreateForm, setShowCreateForm] = useState(false);
   type FormData = {

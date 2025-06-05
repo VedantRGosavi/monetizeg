@@ -1,13 +1,11 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useConvexUser } from '@/lib/hooks/use-convex-user';
+import { useUserData } from '@/lib/hooks/use-user-data';
 import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/components/11_components_ui';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { isSignedIn } = useUser();
-  const { user: convexUser, isLoading } = useConvexUser();
+  const { isSignedIn, isLoading, displayName, plan } = useUserData();
   
   // Temporary static data until PostgreSQL is implemented
   const earnings = { totalEarnings: 0 };
@@ -80,7 +78,7 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-mono font-semibold text-white mb-2 lowercase">
-            welcome back, {convexUser?.name || 'developer'}!
+            welcome back, {displayName || 'developer'}!
           </h2>
           <p className="text-white/70 lowercase">
             here&apos;s an overview of your monetization performance
@@ -132,12 +130,12 @@ export default function DashboardPage() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <Badge className="text-sm bg-white text-phalo-green lowercase">
-                  {convexUser?.plan?.toUpperCase() || 'FREE'}
+                  {plan?.toUpperCase() || 'FREE'}
                 </Badge>
               </div>
               <p className="text-xs text-white/40 mt-1 lowercase">
-                {convexUser?.plan === 'free' ? '70% revenue share' : 
-                 convexUser?.plan === 'pro' ? '85% revenue share' : '90% revenue share'}
+                {plan === 'free' ? '70% revenue share' : 
+                 plan === 'pro' ? '85% revenue share' : '90% revenue share'}
               </p>
             </CardContent>
           </Card>

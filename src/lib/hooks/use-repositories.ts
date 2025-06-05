@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 export interface Repository {
   id: string;
   full_name: string;
-  description?: string;
+  description: string | null;
   is_monetized: boolean;
   stars: number;
   forks: number;
-  language?: string;
+  language: string | null;
   is_private: boolean;
   ad_placement_enabled: boolean;
   ad_placement_max_ads: number;

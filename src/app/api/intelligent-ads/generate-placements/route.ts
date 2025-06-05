@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { getDbWithAuth } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { IntelligentAdService, RepositoryData, IntelligentPlacementRequest } from '@/lib/intelligent-ad-service';
 import { AdCreative } from '@/lib/ad-placement-engine';
 
@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { sql } = await getDbWithAuth();
     const body = await request.json();
     const { 
       repositoryId, 
@@ -26,33 +25,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get repository data with owner verification
-    const repositoryData = await sql`
-      SELECT r.*, ca.readme_content, ca.technologies, ca.topics, ca.target_audience
-      FROM repositories r
-      LEFT JOIN content_analysis ca ON r.id = ca.repository_id
-      WHERE r.id = ${repositoryId} AND r.user_id = (
-        SELECT id FROM users WHERE clerk_id = ${userId}
-      )
-    `;
+    // Get user first
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
 
-    if (repositoryData.length === 0) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Get repository data with content analysis using Prisma
+    const repository = await prisma.repository.findFirst({
+      where: {
+        id: repositoryId,
+        userId: user.id
+      },
+      include: {
+        contentAnalysis: true
+      }
+    });
+
+    if (!repository) {
       return NextResponse.json(
         { error: 'Repository not found or access denied' },
         { status: 404 }
       );
     }
 
-    const repo = repositoryData[0];
-
-    if (!repo.is_monetized || !repo.ad_placement_enabled) {
+    if (!repository.isMonetized || !repository.adPlacementEnabled) {
       return NextResponse.json(
         { error: 'Repository monetization or ad placement is not enabled' },
         { status: 400 }
       );
     }
 
-    if (!repo.readme_content) {
+    if (!repository.contentAnalysis?.readmeContent) {
       return NextResponse.json(
         { error: 'No README content found. Please analyze the repository content first.' },
         { status: 400 }
@@ -60,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get available ads based on repository profile
-    const availableAds = await getAvailableAds(sql, repo);
+    const availableAds = await getAvailableAds(repository);
 
     if (availableAds.length === 0) {
       return NextResponse.json(
@@ -71,18 +78,18 @@ export async function POST(request: NextRequest) {
 
     // Prepare repository data for intelligent service
     const repositoryData_: RepositoryData = {
-      id: repo.id,
-      fullName: repo.full_name,
-      description: repo.description,
-      stars: repo.stars,
-      forks: repo.forks,
-      language: repo.language,
-      readmeContent: repo.readme_content,
-      isMonetized: repo.is_monetized,
-      adPlacementEnabled: repo.ad_placement_enabled,
-      adPlacementMaxAds: repo.ad_placement_max_ads,
-      adPlacementPosition: repo.ad_placement_position,
-      adPlacementCategories: repo.ad_placement_categories || []
+      id: repository.id,
+      fullName: repository.fullName,
+      description: repository.description,
+      stars: repository.stars,
+      forks: repository.forks,
+      language: repository.language,
+      readmeContent: repository.contentAnalysis.readmeContent,
+      isMonetized: repository.isMonetized,
+      adPlacementEnabled: repository.adPlacementEnabled,
+      adPlacementMaxAds: repository.adPlacementMaxAds,
+      adPlacementPosition: repository.adPlacementPosition,
+      adPlacementCategories: repository.adPlacementCategories
     };
 
     // Prepare placement request
@@ -97,55 +104,64 @@ export async function POST(request: NextRequest) {
     const intelligentAdService = new IntelligentAdService();
     const result = await intelligentAdService.generateIntelligentPlacements(placementRequest);
 
-    // Store placement results in database
+    // Store placement results in database using Prisma
     if (result.placements.length > 0) {
       // Remove existing placements
-      await sql`
-        UPDATE ad_placements 
-        SET is_active = false, end_date = now()
-        WHERE repository_id = ${repositoryId} AND is_active = true
-      `;
+      await prisma.adPlacement.updateMany({
+        where: {
+          repositoryId,
+          isActive: true
+        },
+        data: {
+          isActive: false,
+          endDate: new Date()
+        }
+      });
 
       // Insert new placements
       for (const placement of result.placements) {
-        await sql`
-          INSERT INTO ad_placements (
-            repository_id, campaign_id, ad_creative_id, position, section,
-            placement_type, ab_test_id, variant, is_active
-          ) VALUES (
-            ${repositoryId}, 
-            ${placement.adCreativeId.split('_')[0] || 'default'}, -- Extract campaign ID
-            ${placement.adCreativeId},
-            ${placement.position},
-            ${placement.section},
-            'auto',
-            ${result.abTest?.id || null},
-            ${enableABTesting ? 'A' : null},
-            true
-          )
-        `;
+        const campaignId = placement.adCreativeId.split('_')[0] || 'default';
+        
+        await prisma.adPlacement.create({
+          data: {
+            repositoryId,
+            campaignId,
+            adCreativeId: placement.adCreativeId,
+            position: placement.position,
+            section: placement.section,
+            placementType: 'auto',
+            abTestId: result.abTest?.id,
+            variant: enableABTesting ? 'A' : null,
+            isActive: true
+          }
+        });
       }
     }
 
     // Store A/B test if created
     if (result.abTest) {
-      await sql`
-        INSERT INTO ab_tests (
-          id, repository_id, campaign_id, name, description, test_type,
-          variants, traffic_split, status, start_date, end_date,
-          min_sample_size, confidence_level
-        ) VALUES (
-          ${result.abTest.id}, ${repositoryId}, ${result.abTest.campaignId},
-          ${result.abTest.name}, ${result.abTest.description}, ${result.abTest.testType},
-          ${JSON.stringify(result.abTest.variants)}, ${JSON.stringify(result.abTest.trafficSplit)},
-          ${result.abTest.status}, ${result.abTest.startDate.toISOString()},
-          ${result.abTest.endDate?.toISOString() || null},
-          ${result.abTest.minSampleSize}, ${result.abTest.confidenceLevel}
-        )
-        ON CONFLICT (id) DO UPDATE SET
-          status = EXCLUDED.status,
-          updated_at = now()
-      `;
+      await prisma.aBTest.upsert({
+        where: { id: result.abTest.id },
+        update: {
+          status: result.abTest.status,
+          updatedAt: new Date()
+        },
+        create: {
+          id: result.abTest.id,
+          repositoryId,
+          campaignId: result.abTest.campaignId,
+          name: result.abTest.name,
+          description: result.abTest.description,
+          testType: result.abTest.testType,
+          variants: JSON.stringify(result.abTest.variants),
+          trafficSplit: result.abTest.trafficSplit,
+          status: result.abTest.status,
+          startDate: result.abTest.startDate,
+          endDate: result.abTest.endDate,
+          minSampleSize: result.abTest.minSampleSize,
+          confidenceLevel: result.abTest.confidenceLevel
+        }
+      });
     }
 
     return NextResponse.json({
@@ -186,57 +202,84 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Get available ads based on repository characteristics
+ * Get available ads based on repository characteristics using Prisma
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getAvailableAds(sql: any, repository: any): Promise<AdCreative[]> {
+async function getAvailableAds(repository: {
+  id: string;
+  language: string | null;
+  stars: number;
+}): Promise<AdCreative[]> {
   try {
     // Get active campaigns with ads that match repository criteria
-    const ads = await sql`
-      SELECT 
-        ac.id, ac.campaign_id, ac.name, ac.format, ac.content, 
-        ac.cta_text, ac.cta_url, ac.impressions, ac.clicks, ac.ctr,
-        c.target_languages, c.target_topics, c.target_audience_types,
-        c.min_repository_stars, c.max_repository_stars
-      FROM ad_creatives ac
-      JOIN campaigns c ON ac.campaign_id = c.id
-      WHERE ac.is_active = true 
-        AND c.status = 'active'
-        AND c.start_date <= now()
-        AND (c.end_date IS NULL OR c.end_date > now())
-        AND c.budget_total > c.budget_spent
-        AND (
-          c.target_languages = '{}' OR 
-          ${repository.language} = ANY(c.target_languages) OR
-          c.target_languages IS NULL
-        )
-        AND (
-          c.min_repository_stars IS NULL OR 
-          ${repository.stars} >= c.min_repository_stars
-        )
-        AND (
-          c.max_repository_stars IS NULL OR 
-          ${repository.stars} <= c.max_repository_stars
-        )
-      ORDER BY ac.ctr DESC, ac.impressions DESC
-      LIMIT 20
-    `;
+    const ads = await prisma.adCreative.findMany({
+      where: {
+        isActive: true,
+        campaign: {
+          status: 'active',
+          startDate: {
+            lte: new Date()
+          },
+          OR: [
+            { endDate: null },
+            { endDate: { gt: new Date() } }
+          ],
+          budgetSpent: {
+            lt: prisma.campaign.fields.budgetTotal
+          },
+          AND: [
+            {
+              targetLanguages: repository.language
+                ? { has: repository.language }
+                : { isEmpty: true }
+            },
+            {
+              OR: [
+                { minRepositoryStars: null },
+                { minRepositoryStars: { lte: repository.stars } }
+              ]
+            },
+            {
+              OR: [
+                { maxRepositoryStars: null },
+                { maxRepositoryStars: { gte: repository.stars } }
+              ]
+            }
+          ]
+        }
+      },
+      include: {
+        campaign: {
+          select: {
+            id: true,
+            targetLanguages: true,
+            targetTopics: true,
+            targetAudienceTypes: true,
+            minRepositoryStars: true,
+            maxRepositoryStars: true
+          }
+        }
+      },
+      orderBy: [
+        { ctr: 'desc' },
+        { impressions: 'desc' }
+      ],
+      take: 20
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ads.map((ad: any): AdCreative => ({
+    return ads.map((ad): AdCreative => ({
       id: ad.id,
-      campaignId: ad.campaign_id,
+      campaignId: ad.campaignId,
       name: ad.name,
-      format: ad.format,
+      format: ad.format as 'banner' | 'text' | 'card' | 'native',
       content: typeof ad.content === 'string' ? JSON.parse(ad.content) : ad.content,
-      ctaText: ad.cta_text,
-      ctaUrl: ad.cta_url,
+      ctaText: ad.ctaText || undefined,
+      ctaUrl: ad.ctaUrl,
       targeting: {
-        languages: ad.target_languages || [],
-        topics: ad.target_topics || [],
-        audienceTypes: ad.target_audience_types || [],
-        minStars: ad.min_repository_stars,
-        maxStars: ad.max_repository_stars
+        languages: ad.campaign.targetLanguages || [],
+        topics: ad.campaign.targetTopics || [],
+        audienceTypes: ad.campaign.targetAudienceTypes || [],
+        minStars: ad.campaign.minRepositoryStars || undefined,
+        maxStars: ad.campaign.maxRepositoryStars || undefined
       },
       performance: {
         impressions: ad.impressions || 0,

@@ -1,13 +1,11 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useConvexUser } from '@/lib/hooks/use-convex-user';
+import { useUserData } from '@/lib/hooks/use-user-data';
 import Link from 'next/link';
 
 
 export default function AnalyticsPage() {
-  const { isSignedIn } = useUser();
-  const { isLoading } = useConvexUser();
+  const { isSignedIn, isLoading } = useUserData();
   
   // Temporary static data until PostgreSQL is implemented
   const repositories: Array<{ id: string; full_name: string; description?: string; is_monetized: boolean }> = [];

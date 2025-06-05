@@ -1,14 +1,12 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useConvexUser } from '@/lib/hooks/use-convex-user';
+import { useUserData } from '@/lib/hooks/use-user-data';
 import { useStripe } from '@/lib/hooks/use-stripe';
 import Link from 'next/link';
 import { Button, Card, CardHeader, CardContent, CardTitle, Badge } from '@/components/11_components_ui';
 
 export default function SettingsPage() {
-  const { user: clerkUser, isSignedIn } = useUser();
-  const { user: convexUser, isLoading } = useConvexUser();
+  const { clerkUser, isSignedIn, isLoading, plan, githubUsername, createdAt, email } = useUserData();
   const { createCheckoutSession } = useStripe();
 
   const handleUpgrade = async (plan: 'pro' | 'enterprise') => {
@@ -90,16 +88,16 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="text-white/70 text-sm lowercase">email</label>
-                <p className="text-white font-medium">{clerkUser?.emailAddresses[0]?.emailAddress}</p>
+                <p className="text-white font-medium">{email || 'not provided'}</p>
               </div>
               <div>
                 <label className="text-white/70 text-sm lowercase">github username</label>
-                <p className="text-white font-medium">{convexUser?.github_username || 'not connected'}</p>
+                <p className="text-white font-medium">{githubUsername || 'not connected'}</p>
               </div>
               <div>
                 <label className="text-white/70 text-sm lowercase">member since</label>
                 <p className="text-white font-medium">
-                  {convexUser?.created_at ? new Date(convexUser.created_at).toLocaleDateString() : 'unknown'}
+                  {createdAt ? new Date(createdAt).toLocaleDateString() : 'unknown'}
                 </p>
               </div>
               <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
@@ -118,13 +116,13 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-white font-medium lowercase">current plan</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge className={`lowercase ${convexUser?.plan === 'free' ? 'bg-white/20 text-white' : 'bg-white text-phalo-green'}`}>
-                      {convexUser?.plan?.toUpperCase() || 'FREE'}
+                    <Badge className={`lowercase ${plan === 'free' ? 'bg-white/20 text-white' : 'bg-white text-phalo-green'}`}>
+                      {plan?.toUpperCase() || 'FREE'}
                     </Badge>
                     {/* Subscription status will be implemented with PostgreSQL */}
                   </div>
                 </div>
-                {convexUser?.plan === 'free' && (
+                {plan === 'free' && (
                   <Button size="sm" className="bg-white text-phalo-green hover:bg-opacity-90 lowercase" onClick={() => handleUpgrade('pro')}>
                     upgrade
                   </Button>
@@ -133,7 +131,7 @@ export default function SettingsPage() {
 
               {/* Subscription management will be implemented with PostgreSQL */}
 
-              {convexUser?.plan === 'free' && (
+              {plan === 'free' && (
                 <div className="space-y-3">
                   <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                     <h4 className="text-white font-medium mb-2 lowercase">upgrade benefits</h4>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { getDbWithAuth } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { IntelligentAdService } from '@/lib/intelligent-ad-service';
 
 export async function POST(request: NextRequest) {
@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { sql } = await getDbWithAuth();
     const body = await request.json();
     const { repositoryId, readmeContent } = body;
 
@@ -21,15 +20,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get repository data
-    const repository = await sql`
-      SELECT * FROM repositories 
-      WHERE id = ${repositoryId} AND user_id = (
-        SELECT id FROM users WHERE clerk_id = ${userId}
-      )
-    `;
+    // Get repository data using Prisma
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
 
-    if (repository.length === 0) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const repository = await prisma.repository.findFirst({
+      where: {
+        id: repositoryId,
+        userId: user.id
+      }
+    });
+
+    if (!repository) {
       return NextResponse.json(
         { error: 'Repository not found' },
         { status: 404 }
@@ -45,35 +52,38 @@ export async function POST(request: NextRequest) {
       readmeContent
     );
 
-    // Store analysis results in database
-    await sql`
-      INSERT INTO content_analysis (
-        repository_id, readme_content, content_hash, technologies, topics,
-        sentiment_score, complexity_score, target_audience, sections,
-        code_blocks, optimal_placements, analysis_version
-      ) VALUES (
-        ${repositoryId}, ${readmeContent}, ${contentAnalysis.contentHash},
-        ${JSON.stringify(contentAnalysis.technologies)}, ${JSON.stringify(contentAnalysis.topics)},
-        ${contentAnalysis.sentimentScore}, ${contentAnalysis.complexityScore},
-        ${contentAnalysis.targetAudience}, ${JSON.stringify(contentAnalysis.sections)},
-        ${JSON.stringify(contentAnalysis.codeBlocks)}, ${JSON.stringify(contentAnalysis.optimalPlacements)},
-        ${contentAnalysis.analysisVersion}
-      )
-      ON CONFLICT (repository_id) 
-      DO UPDATE SET
-        readme_content = EXCLUDED.readme_content,
-        content_hash = EXCLUDED.content_hash,
-        technologies = EXCLUDED.technologies,
-        topics = EXCLUDED.topics,
-        sentiment_score = EXCLUDED.sentiment_score,
-        complexity_score = EXCLUDED.complexity_score,
-        target_audience = EXCLUDED.target_audience,
-        sections = EXCLUDED.sections,
-        code_blocks = EXCLUDED.code_blocks,
-        optimal_placements = EXCLUDED.optimal_placements,
-        analysis_version = EXCLUDED.analysis_version,
-        updated_at = now()
-    `;
+    // Store analysis results in database using Prisma
+    await prisma.contentAnalysis.upsert({
+      where: { repositoryId },
+      update: {
+        readmeContent,
+        contentHash: contentAnalysis.contentHash,
+        technologies: contentAnalysis.technologies,
+        topics: contentAnalysis.topics,
+        sentimentScore: contentAnalysis.sentimentScore,
+        complexityScore: contentAnalysis.complexityScore,
+        targetAudience: contentAnalysis.targetAudience,
+        sections: contentAnalysis.sections,
+        codeBlocks: contentAnalysis.codeBlocks,
+        optimalPlacements: contentAnalysis.optimalPlacements,
+        analysisVersion: contentAnalysis.analysisVersion,
+        updatedAt: new Date(),
+      },
+      create: {
+        repositoryId,
+        readmeContent,
+        contentHash: contentAnalysis.contentHash,
+        technologies: contentAnalysis.technologies,
+        topics: contentAnalysis.topics,
+        sentimentScore: contentAnalysis.sentimentScore,
+        complexityScore: contentAnalysis.complexityScore,
+        targetAudience: contentAnalysis.targetAudience,
+        sections: contentAnalysis.sections,
+        codeBlocks: contentAnalysis.codeBlocks,
+        optimalPlacements: contentAnalysis.optimalPlacements,
+        analysisVersion: contentAnalysis.analysisVersion,
+      }
+    });
 
     return NextResponse.json({
       success: true,

@@ -5,10 +5,10 @@ import { ABTestingFramework, ABTestConfig, ABTestVariant } from './ab-testing-fr
 export interface RepositoryData {
   id: string;
   fullName: string;
-  description?: string;
+  description: string | null;
   stars: number;
   forks: number;
-  language: string;
+  language: string | null;
   readmeContent: string;
   isMonetized: boolean;
   adPlacementEnabled: boolean;
@@ -412,7 +412,7 @@ export class IntelligentAdService {
     }
 
     if (repository.language && contentAnalysis.technologies.languages.some(lang => 
-      lang.name.toLowerCase() === repository.language.toLowerCase())) {
+      lang.name.toLowerCase() === repository.language?.toLowerCase())) {
       reasoning.push('Repository language aligns with content analysis - improved targeting accuracy');
     }
 
