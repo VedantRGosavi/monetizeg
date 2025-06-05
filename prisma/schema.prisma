@@ -16,13 +16,15 @@ datasource db {
 
 // Core user management
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique @map("clerk_id")
-  email     String   @unique
-  name      String?
-  avatarUrl String?  @map("avatar_url")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  clerkId         String   @unique @map("clerk_id")
+  email           String   @unique
+  name            String?
+  avatarUrl       String?  @map("avatar_url")
+  githubUsername  String?  @map("github_username")
+  githubAccessToken String? @map("github_access_token")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relationships
   repositories    Repository[]

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getRepositories } from '@/lib/db';
+import { UserService } from '@/lib/services/user.service';
 
 interface GitHubRepo {
   id: number;
@@ -25,6 +26,7 @@ interface GitHubRepo {
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify user is authenticated
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
@@ -33,37 +35,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const url = new URL(request.url);
-    const githubToken = url.searchParams.get('token');
-    
-    if (!githubToken) {
+    // Get GitHub client with securely stored token
+    let octokit;
+    try {
+      octokit = await UserService.getGitHubClient();
+    } catch (tokenError) {
+      console.error('GitHub token error:', tokenError instanceof Error ? tokenError.message : 'Unknown error');
       return NextResponse.json(
-        { error: 'GitHub access token is required' },
-        { status: 400 }
+        { error: 'GitHub account not connected. Please connect your GitHub account in settings.' },
+        { status: 403 }
       );
     }
 
-    // Fetch user's repositories from GitHub
-    const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
-      headers: {
-        'Authorization': `Bearer ${githubToken}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'MonetizeG-App'
-      }
+    // Fetch user's repositories from GitHub using Octokit
+    const { data: repositories } = await octokit.repos.listForAuthenticatedUser({
+      sort: 'updated',
+      per_page: 100
     });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        return NextResponse.json(
-          { error: 'Invalid GitHub access token' },
-          { status: 401 }
-        );
-      }
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    const repositories: GitHubRepo[] = await response.json();
-    
     // Get already connected repositories
     let connectedRepoNames = new Set<string>();
     try {
@@ -99,10 +88,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(transformedRepos);
   } catch (error) {
-    console.error('Error fetching GitHub repositories:', error);
+    console.error('Error fetching GitHub repositories:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Failed to fetch repositories from GitHub' },
       { status: 500 }
     );
   }
-} 
+}
