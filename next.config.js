@@ -18,6 +18,12 @@ const nextConfig = {
         tls: false,
         dns: false,
         child_process: false,
+        // Add fallback for Natural.js dependencies
+        'webworker-threads': false,
+        // Other potential Natural.js dependencies
+        worker_threads: false,
+        'aws-sdk': false,
+        'lru-cache': false,
       };
     }
     return config;

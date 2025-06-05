@@ -24,7 +24,7 @@ interface GitHubRepo {
   pushed_at: string | null;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verify user is authenticated
     const { userId } = await auth();
