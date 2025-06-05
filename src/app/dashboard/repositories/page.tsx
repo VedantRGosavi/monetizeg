@@ -145,37 +145,15 @@ export default function RepositoriesPage() {
     }
   };
 
-  const addRepository = async () => {
-    if (!githubUrl) return;
-    
-    // Parse GitHub URL to get fullName
-    const urlParts = githubUrl.replace('https://github.com/', '').split('/');
-    if (urlParts.length < 2) {
-      throw new Error('Invalid GitHub URL');
-    }
-    const fullName = `${urlParts[0]}/${urlParts[1]}`;
-    
-    await createRepository({
-      fullName,
-      description: 'Repository connected from GitHub',
-      isPrivate: false,
-    });
-  };
-  
-  const updateMonetization = async () => {
-    // TODO: Implement monetization update
-    console.log('Monetization update will be implemented');
-  };
-
   const handleConnectRepo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!githubUrl) return;
 
     setIsConnecting(true);
     try {
-      await addRepository();
+      await createRepository(githubUrl);
       setGithubUrl('');
-      alert('Repository connected successfully!');
+      // Optionally, you can refresh the repositories list here
     } catch (error) {
       console.error('Error connecting repository:', error);
       alert(`Failed to connect repository: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -183,27 +161,20 @@ export default function RepositoriesPage() {
       setIsConnecting(false);
     }
   };
-
+  
   const toggleMonetization = async () => {
-    try {
-      await updateMonetization();
-      alert('Monetization update will be implemented with PostgreSQL');
-    } catch (error) {
-      console.error('Error updating monetization:', error);
-      alert('Failed to update monetization settings');
-    }
+    // Placeholder for monetization toggle logic
+    alert('Monetization toggle coming soon!');
   };
 
   const toggleRepoSelection = (repoId: string) => {
-    setSelectedRepos(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(repoId)) {
-        newSet.delete(repoId);
-      } else {
-        newSet.add(repoId);
-      }
-      return newSet;
-    });
+    const newSelectedRepos = new Set(selectedRepos);
+    if (newSelectedRepos.has(repoId)) {
+      newSelectedRepos.delete(repoId);
+    } else {
+      newSelectedRepos.add(repoId);
+    }
+    setSelectedRepos(newSelectedRepos);
   };
 
   if (!isSignedIn) {
