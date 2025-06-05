@@ -1,0 +1,220 @@
+'use client';
+
+import { useUser } from '@clerk/nextjs';
+import { useConvexUser } from '@/lib/hooks/use-convex-user';
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/components/11_components_ui';
+import Link from 'next/link';
+
+export default function DashboardPage() {
+  const { isSignedIn } = useUser();
+  const { user: convexUser, isLoading } = useConvexUser();
+  
+  // Temporary static data until PostgreSQL is implemented
+  const earnings = { totalEarnings: 0 };
+  const repositories: Array<{ name: string; status: string }> = [];
+  const campaigns: Array<{ status: string }> = [];
+  
+  const activeCampaigns = campaigns.filter((campaign: { status: string }) => campaign.status === 'active');
+
+  if (!isSignedIn) {
+    return (
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-white text-center">
+          <h1 className="text-2xl font-mono font-semibold mb-4 lowercase">please sign in to access your dashboard</h1>
+          <Link href="/" className="text-white/70 hover:text-white lowercase">
+            return to homepage
+          </Link>
+        </div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-white lowercase">loading dashboard...</div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden">
+      {/* Background gradient and noise overlay */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+
+      {/* Header */}
+      <header className="relative z-10 bg-white/5 backdrop-blur-sm border-b border-white/10">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-mono font-semibold text-white lowercase">dashboard</h1>
+            <nav className="flex gap-6">
+              <Link href="/dashboard" className="text-white hover:text-white/70 lowercase">overview</Link>
+              <Link href="/dashboard/repositories" className="text-white/70 hover:text-white lowercase">repositories</Link>
+              <Link href="/dashboard/analytics" className="text-white/70 hover:text-white lowercase">analytics</Link>
+              <Link href="/dashboard/campaigns" className="text-white/70 hover:text-white lowercase">campaigns</Link>
+              <Link href="/dashboard/payouts" className="text-white/70 hover:text-white lowercase">payouts</Link>
+              <Link href="/settings" className="text-white/70 hover:text-white lowercase">settings</Link>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <div className="relative z-10 container mx-auto px-6 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-mono font-semibold text-white mb-2 lowercase">
+            welcome back, {convexUser?.name || 'developer'}!
+          </h2>
+          <p className="text-white/70 lowercase">
+            here&apos;s an overview of your monetization performance
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">total earnings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                ${((earnings.totalEarnings || 0) / 100).toFixed(2)}
+              </div>
+              <p className="text-xs text-white/40 lowercase">+12% from last month</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">active repositories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {repositories.length || 0}
+              </div>
+              <p className="text-xs text-white/40 lowercase">connected to github</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">active ads</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {activeCampaigns.length || 0}
+              </div>
+              <p className="text-xs text-white/40 lowercase">currently running</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">current plan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge className="text-sm bg-white text-phalo-green lowercase">
+                  {convexUser?.plan?.toUpperCase() || 'FREE'}
+                </Badge>
+              </div>
+              <p className="text-xs text-white/40 mt-1 lowercase">
+                {convexUser?.plan === 'free' ? '70% revenue share' : 
+                 convexUser?.plan === 'pro' ? '85% revenue share' : '90% revenue share'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white lowercase">quick actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Link 
+                href="/dashboard/repositories" 
+                className="block p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <h3 className="font-semibold text-white mb-1 lowercase">connect repository</h3>
+                <p className="text-sm text-white/70 lowercase">add a new github repository to start monetizing</p>
+              </Link>
+              
+              <Link 
+                href="/dashboard/campaigns" 
+                className="block p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <h3 className="font-semibold text-white mb-1 lowercase">create campaign</h3>
+                <p className="text-sm text-white/70 lowercase">set up a new advertising campaign</p>
+              </Link>
+              
+              <Link 
+                href="/pricing" 
+                className="block p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <h3 className="font-semibold text-white mb-1 lowercase">upgrade plan</h3>
+                <p className="text-sm text-white/70 lowercase">increase your revenue share with pro or enterprise</p>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white lowercase">recent activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <div>
+                    <p className="text-sm text-white lowercase">new ad impression on react-components</p>
+                    <p className="text-xs text-white/40 lowercase">2 minutes ago</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-white/70 rounded-full"></div>
+                  <div>
+                    <p className="text-sm text-white lowercase">payment processed: $24.50</p>
+                    <p className="text-xs text-white/40 lowercase">1 hour ago</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-white/40 rounded-full"></div>
+                  <div>
+                    <p className="text-sm text-white lowercase">repository analytics updated</p>
+                    <p className="text-xs text-white/40 lowercase">3 hours ago</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <style jsx global>{`
+        .bg-phalo-green { background: #123c2b; }
+      `}</style>
+    </div>
+  );
+}
+

@@ -2,26 +2,9 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useConvexUser } from '../../../../src/lib/hooks/use-convex-user';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
-import { Id } from '../../../../convex/_generated/dataModel';
+import { useCampaigns, type Campaign } from '@/lib/hooks/use-campaigns';
 import { useState } from 'react';
 import Link from 'next/link';
-
-interface Campaign {
-  _id: string;
-  name: string;
-  description?: string;
-  status: string;
-  budget: {
-    total: number;
-    spent: number;
-    dailyLimit?: number;
-  };
-  startDate: number;
-  endDate?: number;
-  advertiserId: string;
-}
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 
 export default function CampaignsPage() {
   const { isSignedIn } = useUser();
-  const { user: convexUser, isLoading } = useConvexUser();
+  const { isLoading } = useConvexUser();
+  const { campaigns, createCampaign: createCampaignDb } = useCampaigns();
   const [showCreateForm, setShowCreateForm] = useState(false);
   type FormData = {
     name: string;
@@ -51,29 +35,27 @@ export default function CampaignsPage() {
     endDate: '',
   });
 
-  const campaigns = useQuery(
-    api.campaigns.getCampaignsByAdvertiser,
-    convexUser?._id ? { advertiserId: convexUser._id as Id<"users"> } : "skip"
-  ) as Campaign[] || [];
-
-  const createCampaign = useMutation(api.campaigns.createCampaign);
+  const createCampaign = async () => {
+    try {
+      await createCampaignDb({
+        name: formData.name,
+        description: formData.description,
+        budgetTotal: parseFloat(formData.budget),
+        budgetDailyLimit: formData.dailyLimit ? parseFloat(formData.dailyLimit) : undefined,
+        startDate: formData.startDate,
+        endDate: formData.endDate || undefined,
+      });
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!convexUser) return;
 
     try {
-      await createCampaign({
-        advertiserId: convexUser._id,
-        name: formData.name,
-        description: formData.description || undefined,
-        budget: {
-          total: parseInt(formData.budget) * 100, // Convert to cents
-          dailyLimit: formData.dailyLimit ? parseInt(formData.dailyLimit) * 100 : undefined,
-        },
-        startDate: new Date(formData.startDate).getTime(),
-        endDate: formData.endDate ? new Date(formData.endDate).getTime() : undefined,
-      });
+      await createCampaign();
 
       setFormData({
         name: '',
@@ -92,39 +74,59 @@ export default function CampaignsPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-phalo-green flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="mb-4">Please sign in to access campaigns.</p>
-          <Link href="/" className="text-white underline">Go back to home</Link>
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-center text-white">
+          <h1 className="text-2xl font-mono font-semibold mb-4 lowercase">access denied</h1>
+          <p className="mb-4 lowercase">please sign in to access campaigns.</p>
+          <Link href="/" className="text-white/70 hover:text-white underline lowercase">go back to home</Link>
         </div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-phalo-green flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-white lowercase">loading...</div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-phalo-green">
-      <div className="container mx-auto px-4 py-8">
+    <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden">
+      {/* Background gradient and noise overlay */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Advertising Campaigns</h1>
-              <p className="text-white/70">Create and manage your advertising campaigns to reach developers.</p>
+              <h1 className="text-4xl font-mono font-semibold text-white mb-2 lowercase">advertising campaigns</h1>
+              <p className="text-white/70 lowercase">create and manage your advertising campaigns to reach developers.</p>
             </div>
             <div className="flex gap-3">
               <Link href="/dashboard">
-                <Button variant="secondary">← Back to Dashboard</Button>
+                <Button variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">← back to dashboard</Button>
               </Link>
-              <Button onClick={() => setShowCreateForm(true)}>
-                Create Campaign
+              <Button onClick={() => setShowCreateForm(true)} className="bg-white text-phalo-green hover:bg-opacity-90 lowercase">
+                create campaign
               </Button>
             </div>
           </div>
@@ -132,9 +134,9 @@ export default function CampaignsPage() {
 
         {/* Create Campaign Form */}
         {showCreateForm && (
-          <Card className="mb-8">
+          <Card className="mb-8 bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
             <CardHeader>
-              <CardTitle>Create New Campaign</CardTitle>
+              <CardTitle className="text-white lowercase">create new campaign</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={(e) => {
@@ -143,7 +145,7 @@ export default function CampaignsPage() {
               }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="name">Campaign Name *</Label>
+                    <Label htmlFor="name" className="text-white/70 lowercase">campaign name *</Label>
                     <Input
                       id="name"
                       value={formData.name}
@@ -151,11 +153,11 @@ export default function CampaignsPage() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       required
-                      className="w-full"
+                      className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="budget">Total Budget (USD) *</Label>
+                    <Label htmlFor="budget" className="text-white/70 lowercase">total budget (usd) *</Label>
                     <Input
                       id="budget"
                       type="number"
@@ -165,13 +167,13 @@ export default function CampaignsPage() {
                         setFormData({ ...formData, budget: e.target.value })
                       }
                       required
-                      className="w-full"
+                      className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-white/70 lowercase">description</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -179,13 +181,13 @@ export default function CampaignsPage() {
                       setFormData({ ...formData, description: e.target.value })
                     }
                     rows={3}
-                    className="w-full"
+                    className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <Label htmlFor="dailyLimit">Daily Limit (USD)</Label>
+                    <Label htmlFor="dailyLimit" className="text-white/70 lowercase">daily limit (usd)</Label>
                     <Input
                       id="dailyLimit"
                       type="number"
@@ -194,11 +196,11 @@ export default function CampaignsPage() {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                         setFormData({ ...formData, dailyLimit: e.target.value })
                       }
-                      className="w-full"
+                      className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="startDate">Start Date *</Label>
+                    <Label htmlFor="startDate" className="text-white/70 lowercase">start date *</Label>
                     <Input
                       id="startDate"
                       type="date"
@@ -207,11 +209,11 @@ export default function CampaignsPage() {
                         setFormData({ ...formData, startDate: e.target.value })
                       }
                       required
-                      className="w-full"
+                      className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="endDate">End Date</Label>
+                    <Label htmlFor="endDate" className="text-white/70 lowercase">end date</Label>
                     <Input
                       id="endDate"
                       type="date"
@@ -219,15 +221,15 @@ export default function CampaignsPage() {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                         setFormData({ ...formData, endDate: e.target.value })
                       }
-                      className="w-full"
+                      className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <Button type="submit">Create Campaign</Button>
-                  <Button type="button" variant="secondary" onClick={() => setShowCreateForm(false)}>
-                    Cancel
+                  <Button type="submit" className="bg-white text-phalo-green hover:bg-opacity-90 lowercase">create campaign</Button>
+                  <Button type="button" variant="secondary" onClick={() => setShowCreateForm(false)} className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                    cancel
                   </Button>
                 </div>
               </form>
@@ -236,24 +238,24 @@ export default function CampaignsPage() {
         )}
 
         {/* Campaigns List */}
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
           <CardHeader>
-            <CardTitle>Your Campaigns</CardTitle>
+            <CardTitle className="text-white lowercase">your campaigns</CardTitle>
           </CardHeader>
           <CardContent>
             {campaigns && campaigns.length > 0 ? (
               <div className="space-y-4">
                 {campaigns?.map((campaign: Campaign) => (
-                  <div key={campaign._id} className="p-6 bg-white/5 rounded-lg border border-white/10">
+                  <div key={campaign.id} className="p-6 bg-white/5 rounded-lg border border-white/10">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-xl font-semibold text-white">{campaign.name}</h3>
-                          <Badge variant={
-                            campaign.status === 'active' ? 'default' :
-                            campaign.status === 'paused' ? 'secondary' :
-                            campaign.status === 'completed' ? 'outline' : 'destructive'
-                          }>
+                          <Badge className={`lowercase ${
+                            campaign.status === 'active' ? 'bg-white/20 text-white' :
+                            campaign.status === 'paused' ? 'bg-white/10 text-white/60' :
+                            campaign.status === 'completed' ? 'bg-white/10 text-white/60' : 'bg-red-500/20 text-red-400'
+                          }`}>
                             {campaign.status}
                           </Badge>
                         </div>
@@ -261,20 +263,20 @@ export default function CampaignsPage() {
                           <p className="text-white/70 mb-3">{campaign.description}</p>
                         )}
                         <div className="flex items-center gap-6 text-sm text-white/60">
-                          <span>Budget: ${campaign.budget.total.toFixed(2)}</span>
-                          <span>Spent: ${campaign.budget.spent.toFixed(2)}</span>
-                          <span>Start: {new Date(campaign.startDate).toLocaleDateString()} - {campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : 'Ongoing'}</span>
+                          <span>budget: ${campaign.budget_total.toFixed(2)}</span>
+                          <span>spent: ${campaign.budget_spent.toFixed(2)}</span>
+                          <span>start: {new Date(campaign.start_date).toLocaleDateString()} - {campaign.end_date ? new Date(campaign.end_date).toLocaleDateString() : 'ongoing'}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="secondary">
-                          Edit
+                        <Button size="sm" variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                          edit
                         </Button>
-                        <Button size="sm" variant="secondary">
-                          View Ads
+                        <Button size="sm" variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                          view ads
                         </Button>
-                        <Button size="sm" variant="secondary">
-                          Analytics
+                        <Button size="sm" variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                          analytics
                         </Button>
                       </div>
                     </div>
@@ -282,14 +284,14 @@ export default function CampaignsPage() {
                     {/* Progress Bar */}
                     <div className="w-full bg-white/10 rounded-full h-2">
                       <div 
-                        className="bg-green-400 h-2 rounded-full transition-all"
+                        className="bg-white h-2 rounded-full transition-all"
                         style={{ 
-                          width: `${Math.min((campaign.budget.spent / campaign.budget.total) * 100, 100)}%` 
+                          width: `${Math.min((campaign.budget_spent / campaign.budget_total) * 100, 100)}%` 
                         }}
                       />
                     </div>
                     <div className="flex justify-between text-xs text-white/60 mt-1">
-                      <span>${campaign.budget.spent.toFixed(2)} / ${campaign.budget.total.toFixed(2)} ({((campaign.budget.spent / campaign.budget.total) * 100).toFixed(1)}%)</span>
+                      <span>${campaign.budget_spent.toFixed(2)} / ${campaign.budget_total.toFixed(2)} ({((campaign.budget_spent / campaign.budget_total) * 100).toFixed(1)}%)</span>
                     </div>
                   </div>
                 ))}
@@ -297,16 +299,20 @@ export default function CampaignsPage() {
             ) : (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📢</div>
-                <h3 className="text-xl font-semibold text-white mb-2">No campaigns yet</h3>
-                <p className="text-white/70 mb-6">Create your first advertising campaign to start reaching developers.</p>
-                <Button onClick={() => setShowCreateForm(true)}>
-                  Create Your First Campaign
+                <h3 className="text-xl font-semibold text-white mb-2 lowercase">no campaigns yet</h3>
+                <p className="text-white/70 mb-6 lowercase">create your first advertising campaign to start reaching developers.</p>
+                <Button onClick={() => setShowCreateForm(true)} className="bg-white text-phalo-green hover:bg-opacity-90 lowercase">
+                  create your first campaign
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+      
+      <style jsx global>{`
+        .bg-phalo-green { background: #123c2b; }
+      `}</style>
     </div>
   );
 }

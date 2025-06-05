@@ -3,20 +3,13 @@
 import { useUser } from '@clerk/nextjs';
 import { useConvexUser } from '@/lib/hooks/use-convex-user';
 import { useStripe } from '@/lib/hooks/use-stripe';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
 import Link from 'next/link';
 import { Button, Card, CardHeader, CardContent, CardTitle, Badge } from '@/components/11_components_ui';
 
 export default function SettingsPage() {
   const { user: clerkUser, isSignedIn } = useUser();
   const { user: convexUser, isLoading } = useConvexUser();
-  const { createCheckoutSession, cancelSubscription, openCustomerPortal } = useStripe();
-  
-  const subscription = useQuery(
-    api.payments.getUserSubscription,
-    convexUser?._id ? { userId: convexUser._id } : "skip"
-  );
+  const { createCheckoutSession } = useStripe();
 
   const handleUpgrade = async (plan: 'pro' | 'enterprise') => {
     try {
@@ -29,178 +22,134 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCancelSubscription = async () => {
-    if (!subscription?.stripeSubscriptionId) return;
-    
-    const confirmed = confirm('Are you sure you want to cancel your subscription? It will remain active until the end of your billing period.');
-    if (!confirmed) return;
-
-    try {
-      await cancelSubscription(subscription.stripeSubscriptionId);
-      alert('Subscription canceled successfully. It will remain active until the end of your billing period.');
-    } catch (error) {
-      console.error('Error canceling subscription:', error);
-      alert('Failed to cancel subscription');
-    }
-  };
-
-  const handleManageBilling = async () => {
-    if (!convexUser?.stripeCustomerId) return;
-    
-    try {
-      await openCustomerPortal(convexUser.stripeCustomerId);
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-      alert('Failed to open billing portal');
-    }
-  };
-
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-phalo-green flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="mb-4">Please sign in to access settings.</p>
-          <Link href="/" className="text-white underline">Go back to home</Link>
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-center text-white">
+          <h1 className="text-2xl font-mono font-semibold mb-4 lowercase">access denied</h1>
+          <p className="mb-4 lowercase">please sign in to access settings.</p>
+          <Link href="/" className="text-white/70 hover:text-white underline lowercase">go back to home</Link>
         </div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-phalo-green flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-white lowercase">loading...</div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-phalo-green">
-      <div className="container mx-auto px-4 py-8">
+    <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden">
+      {/* Background gradient and noise overlay */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Settings</h1>
-              <p className="text-white/70">Manage your account and subscription settings.</p>
+              <h1 className="text-4xl font-mono font-semibold text-white mb-2 lowercase">settings</h1>
+              <p className="text-white/70 lowercase">manage your account and subscription settings.</p>
             </div>
             <Link href="/dashboard">
-              <Button variant="secondary">← Back to Dashboard</Button>
+              <Button variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">← back to dashboard</Button>
             </Link>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Account Information */}
-          <Card>
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
+              <CardTitle className="text-white lowercase">account information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-white/70 text-sm">Name</label>
-                <p className="text-white font-medium">{clerkUser?.fullName || 'Not provided'}</p>
+                <label className="text-white/70 text-sm lowercase">name</label>
+                <p className="text-white font-medium">{clerkUser?.fullName || 'not provided'}</p>
               </div>
               <div>
-                <label className="text-white/70 text-sm">Email</label>
+                <label className="text-white/70 text-sm lowercase">email</label>
                 <p className="text-white font-medium">{clerkUser?.emailAddresses[0]?.emailAddress}</p>
               </div>
               <div>
-                <label className="text-white/70 text-sm">GitHub Username</label>
-                <p className="text-white font-medium">{convexUser?.githubUsername || 'Not connected'}</p>
+                <label className="text-white/70 text-sm lowercase">github username</label>
+                <p className="text-white font-medium">{convexUser?.github_username || 'not connected'}</p>
               </div>
               <div>
-                <label className="text-white/70 text-sm">Member Since</label>
+                <label className="text-white/70 text-sm lowercase">member since</label>
                 <p className="text-white font-medium">
-                  {convexUser?.createdAt ? new Date(convexUser.createdAt).toLocaleDateString() : 'Unknown'}
+                  {convexUser?.created_at ? new Date(convexUser.created_at).toLocaleDateString() : 'unknown'}
                 </p>
               </div>
-              <Button variant="secondary" size="sm">
-                Edit Profile
+              <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                edit profile
               </Button>
             </CardContent>
           </Card>
 
           {/* Subscription */}
-          <Card>
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
             <CardHeader>
-              <CardTitle>Subscription</CardTitle>
+              <CardTitle className="text-white lowercase">subscription</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-medium">Current Plan</p>
+                  <p className="text-white font-medium lowercase">current plan</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={convexUser?.plan === 'free' ? 'default' : 'success'}>
+                    <Badge className={`lowercase ${convexUser?.plan === 'free' ? 'bg-white/20 text-white' : 'bg-white text-phalo-green'}`}>
                       {convexUser?.plan?.toUpperCase() || 'FREE'}
                     </Badge>
-                    {subscription?.status && (
-                      <Badge variant={
-                        subscription.status === 'active' ? 'success' :
-                        subscription.status === 'cancelled' ? 'warning' : 'error'
-                      }>
-                        {subscription.status}
-                      </Badge>
-                    )}
+                    {/* Subscription status will be implemented with PostgreSQL */}
                   </div>
                 </div>
                 {convexUser?.plan === 'free' && (
-                  <Button size="sm" onClick={() => handleUpgrade('pro')}>
-                    Upgrade
+                  <Button size="sm" className="bg-white text-phalo-green hover:bg-opacity-90 lowercase" onClick={() => handleUpgrade('pro')}>
+                    upgrade
                   </Button>
                 )}
               </div>
 
-              {subscription && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-white/70 text-sm">Billing Period</label>
-                    <p className="text-white font-medium">
-                      {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {' '}
-                      {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                    </p>
-                  </div>
-                  
-                  {subscription.cancelAtPeriodEnd && (
-                    <div className="p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                      <p className="text-yellow-400 text-sm">
-                        Your subscription will be canceled at the end of the current billing period.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    {convexUser?.stripeCustomerId && (
-                      <Button variant="secondary" size="sm" onClick={handleManageBilling}>
-                        Manage Billing
-                      </Button>
-                    )}
-                    {!subscription.cancelAtPeriodEnd && (
-                      <Button variant="secondary" size="sm" onClick={handleCancelSubscription}>
-                        Cancel Subscription
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Subscription management will be implemented with PostgreSQL */}
 
               {convexUser?.plan === 'free' && (
                 <div className="space-y-3">
-                  <div className="p-4 bg-white/5 rounded-lg">
-                    <h4 className="text-white font-medium mb-2">Upgrade Benefits</h4>
+                  <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                    <h4 className="text-white font-medium mb-2 lowercase">upgrade benefits</h4>
                     <ul className="text-white/70 text-sm space-y-1">
-                      <li>• Higher revenue share (85% vs 70%)</li>
-                      <li>• Unlimited repositories</li>
-                      <li>• Advanced analytics</li>
-                      <li>• Priority support</li>
+                      <li>• higher revenue share (85% vs 70%)</li>
+                      <li>• unlimited repositories</li>
+                      <li>• advanced analytics</li>
+                      <li>• priority support</li>
                     </ul>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleUpgrade('pro')}>
-                      Upgrade to Pro
+                    <Button size="sm" className="bg-white text-phalo-green hover:bg-opacity-90 lowercase" onClick={() => handleUpgrade('pro')}>
+                      upgrade to pro
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => handleUpgrade('enterprise')}>
-                      Enterprise
+                    <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase" onClick={() => handleUpgrade('enterprise')}>
+                      enterprise
                     </Button>
                   </div>
                 </div>
@@ -209,72 +158,76 @@ export default function SettingsPage() {
           </Card>
 
           {/* Preferences */}
-          <Card>
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
             <CardHeader>
-              <CardTitle>Preferences</CardTitle>
+              <CardTitle className="text-white lowercase">preferences</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-medium">Email Notifications</p>
-                  <p className="text-white/70 text-sm">Receive updates about your earnings and campaigns</p>
+                  <p className="text-white font-medium lowercase">email notifications</p>
+                  <p className="text-white/70 text-sm lowercase">receive updates about your earnings and campaigns</p>
                 </div>
-                <Button variant="secondary" size="sm">
-                  Configure
+                <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                  configure
                 </Button>
               </div>
               
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-medium">Auto-Payout</p>
-                  <p className="text-white/70 text-sm">Automatically request payouts when threshold is met</p>
+                  <p className="text-white font-medium lowercase">auto-payout</p>
+                  <p className="text-white/70 text-sm lowercase">automatically request payouts when threshold is met</p>
                 </div>
-                <Button variant="secondary" size="sm">
-                  Enable
+                <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                  enable
                 </Button>
               </div>
               
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-medium">API Access</p>
-                  <p className="text-white/70 text-sm">Generate API keys for programmatic access</p>
+                  <p className="text-white font-medium lowercase">api access</p>
+                  <p className="text-white/70 text-sm lowercase">generate api keys for programmatic access</p>
                 </div>
-                <Button variant="secondary" size="sm">
-                  Manage
+                <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                  manage
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           {/* Danger Zone */}
-          <Card>
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-red-400">Danger Zone</CardTitle>
+              <CardTitle className="text-red-400 lowercase">danger zone</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-medium">Export Data</p>
-                  <p className="text-white/70 text-sm">Download all your data in JSON format</p>
+                  <p className="text-white font-medium lowercase">export data</p>
+                  <p className="text-white/70 text-sm lowercase">download all your data in json format</p>
                 </div>
-                <Button variant="secondary" size="sm">
-                  Export
+                <Button variant="secondary" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 lowercase">
+                  export
                 </Button>
               </div>
               
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-medium">Delete Account</p>
-                  <p className="text-white/70 text-sm">Permanently delete your account and all data</p>
+                  <p className="text-white font-medium lowercase">delete account</p>
+                  <p className="text-white/70 text-sm lowercase">permanently delete your account and all data</p>
                 </div>
-                <Button variant="secondary" size="sm" className="text-red-400 border-red-400/30 hover:bg-red-500/20">
-                  Delete
+                <Button variant="secondary" size="sm" className="text-red-400 border-red-400/30 hover:bg-red-500/20 bg-white/5 lowercase">
+                  delete
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      
+      <style jsx global>{`
+        .bg-phalo-green { background: #123c2b; }
+      `}</style>
     </div>
   );
 }

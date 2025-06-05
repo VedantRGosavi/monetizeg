@@ -1,36 +1,14 @@
 'use client';
 
-import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton, useAuth as useClerkAuth } from '@clerk/nextjs';
-import { ConvexProviderWithClerk } from 'convex/react-clerk';
-import { ConvexReactClient } from 'convex/react';
-
-type UseAuth = () => {
-  isLoaded: boolean;
-  isSignedIn: boolean | undefined;
-  getToken: (options: { template?: string; skipCache?: boolean }) => Promise<string | null>;
-  orgId: string | null | undefined;
-  orgRole: string | null | undefined;
-};
-
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const auth = useClerkAuth();
-  
-  const useAuth: UseAuth = () => ({
-    isLoaded: auth.isLoaded,
-    isSignedIn: auth.isSignedIn,
-    getToken: auth.getToken,
-    orgId: auth.orgId,
-    orgRole: auth.orgRole,
-  });
-  
   return (
-    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+    <>
       <header className="fixed top-0 right-0 p-4 z-50">
         <SignedIn>
           <div className="flex items-center gap-2">
@@ -53,6 +31,6 @@ export default function ClientLayout({
       <main className="pt-16">
         {children}
       </main>
-    </ConvexProviderWithClerk>
+    </>
   );
 }
