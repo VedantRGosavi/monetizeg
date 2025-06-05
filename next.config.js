@@ -22,12 +22,21 @@ const nextConfig = {
     }
     return config;
   },
-  // Add production domain configuration
+  // Add comprehensive security headers
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
+          // Basic security headers with improved values
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
           {
             key: 'X-Frame-Options',
             value: 'DENY',
@@ -38,7 +47,51 @@ const nextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            value: 'strict-origin-when-cross-origin',
+          },
+          // Modern security headers
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin',
+          },
+          // Content Security Policy
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self';",
+              // Scripts: Allow Clerk, Stripe, and inline scripts for Next.js
+              "script-src 'self' https://*.clerk.accounts.dev https://cdn.jsdelivr.net https://*.stripe.com 'unsafe-inline' 'unsafe-eval';",
+              // Styles: Allow Google Fonts and inline styles for Next.js components
+              "style-src 'self' https://fonts.googleapis.com 'unsafe-inline';",
+              // Fonts: Allow Google Fonts
+              "font-src 'self' https://fonts.gstatic.com data:;",
+              // Images: Allow Clerk, data URIs, and blobs for avatars
+              "img-src 'self' https://*.clerk.accounts.dev https://img.clerk.com https://*.stripe.com data: blob:;",
+              // Connect: Allow Clerk and Stripe APIs
+              "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com https://*.vercel.app;",
+              // Frames: Allow Clerk and Stripe secure iframes
+              "frame-src 'self' https://*.clerk.accounts.dev https://*.stripe.com;",
+              // Media: Restrict
+              "media-src 'self';",
+              // Objects: Disallow
+              "object-src 'none';",
+              // Manifests: Allow self
+              "manifest-src 'self';",
+              // Base URI: Restrict to self
+              "base-uri 'self';",
+              // Form actions: Restrict to self
+              "form-action 'self';",
+              // Frame ancestors: Prevent embedding
+              "frame-ancestors 'none';",
+            ].join(' '),
           },
         ],
       },
