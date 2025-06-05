@@ -13,16 +13,6 @@ const isProtectedApiRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { hostname } = req.nextUrl;
-  
-  // Redirect www to non-www
-  if (hostname.startsWith('www.')) {
-    return NextResponse.redirect(
-      `https://${hostname.replace('www.', '')}${req.nextUrl.pathname}${req.nextUrl.search}`,
-      { status: 301 }
-    );
-  }
-
   // Handle Clerk authentication for protected routes and API routes
   if (isProtectedRoute(req) || isProtectedApiRoute(req)) {
     await auth.protect();
