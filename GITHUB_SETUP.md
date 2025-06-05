@@ -8,8 +8,8 @@ This guide will help you set up GitHub OAuth integration for your MonetizeG appl
 2. Click "New OAuth App"
 3. Fill in the application details:
    - **Application name**: MonetizeG
-   - **Homepage URL**: `http://localhost:3000` (for development)
-   - **Authorization callback URL**: `http://localhost:3000/api/auth/github/callback`
+   - **Homepage URL**: `https://monetizeg.dev` (for production) or `http://localhost:3000` (for development)
+   - **Authorization callback URL**: `https://monetizeg.dev/api/auth/github/callback` (for production) or `http://localhost:3000/api/auth/github/callback` (for development)
 4. Click "Register application"
 
 ## 2. Get Your Credentials
@@ -35,13 +35,13 @@ Note:
 
 ## 4. For Production
 
-When deploying to production:
+When deploying to production (monetizeg.dev):
 
 1. Update your GitHub OAuth app settings:
-   - **Homepage URL**: `https://your-domain.com`
-   - **Authorization callback URL**: `https://your-domain.com/api/auth/github/callback`
+   - **Homepage URL**: `https://monetizeg.dev`
+   - **Authorization callback URL**: `https://monetizeg.dev/api/auth/github/callback`
 
-2. Update your environment variables with production values
+2. Update your environment variables with production values in Vercel dashboard
 
 ## 5. Database Setup
 

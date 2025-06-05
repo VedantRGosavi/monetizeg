@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createOrUpdateUser, getCurrentUser, getUserByClerkId } from '@/lib/db';
+import { createInitialUser, getUserByClerkId } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
 
 export async function GET() {
   try {
-    // Try to get current user with auth first
-    let user = await getCurrentUser();
+    // Try to get auth context first
+    const { userId } = await auth();
     
-    // If that fails, try to get user by clerk ID from auth
-    if (!user) {
-      try {
-        const { userId } = await auth();
-        if (userId) {
-          user = await getUserByClerkId(userId);
-        }
-      } catch (error) {
-        console.error('Auth error in GET /api/users:', error);
-      }
+    if (!userId) {
+      return NextResponse.json(null, { status: 401 });
     }
+    
+    // Get user directly by clerk ID to avoid auth context issues
+    const user = await getUserByClerkId(userId);
     
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
-    return NextResponse.json(null);
+    return NextResponse.json(null, { status: 500 });
   }
 }
 
@@ -45,7 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(existingUser, { status: 200 });
     }
 
-    const user = await createOrUpdateUser({
+    // Use createInitialUser instead of createOrUpdateUser to avoid auth context issues during user creation
+    const user = await createInitialUser({
       id,
       emailAddresses,
       firstName,

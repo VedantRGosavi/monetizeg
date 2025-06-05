@@ -202,8 +202,19 @@ export async function createRepository(data: {
   const { sql } = await getDbWithAuth();
   const user = await getCurrentUser();
   
+  // If user doesn't exist, throw a clear error
   if (!user) {
-    throw new Error('User not found');
+    throw new Error('User not found in database. Please refresh the page and try again.');
+  }
+
+  // Check if repository already exists for this user
+  const existingRepo = await sql`
+    SELECT id FROM repositories 
+    WHERE user_id = ${user.id} AND full_name = ${data.fullName}
+  `;
+
+  if (existingRepo.length > 0) {
+    throw new Error(`Repository ${data.fullName} is already connected`);
   }
 
   const result = await sql`

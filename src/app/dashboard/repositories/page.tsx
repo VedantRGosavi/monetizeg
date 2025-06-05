@@ -36,7 +36,24 @@ export default function RepositoriesPage() {
       // Clear the URL parameter
       window.history.replaceState({}, '', '/dashboard/repositories');
     }
+    
+    // Initialize user if needed
+    initializeUserIfNeeded();
   }, []);
+
+  const initializeUserIfNeeded = async () => {
+    try {
+      // Try to fetch current user to see if they exist in database
+      const userResponse = await fetch('/api/users');
+      if (!userResponse.ok || !(await userResponse.json())) {
+        // User doesn't exist, initialize them
+        await fetch('/api/users/init', { method: 'POST' });
+      }
+    } catch (error) {
+      console.error('Error initializing user:', error);
+      // Don't show error to user, just log it
+    }
+  };
 
   const fetchGitHubToken = async () => {
     try {
@@ -103,16 +120,28 @@ export default function RepositoriesPage() {
       
       if (errors.length > 0) {
         console.error('Some repositories failed to connect:', errors);
-        alert(`Connected ${results.length} repositories. ${errors.length} failed to connect.`);
+        
+        // Show detailed error information
+        const errorMessages = errors.map(e => `${e.repo}: ${e.error}`).join('\n');
+        alert(`Connected ${results.length} repositories. ${errors.length} failed to connect:\n\n${errorMessages}`);
+        
+        // If all failed due to user not found, suggest refreshing
+        if (errors.every(e => e.error.includes('account is not properly initialized'))) {
+          if (confirm('It seems your account needs to be initialized. Would you like to refresh the page?')) {
+            window.location.reload();
+          }
+        }
       } else {
         alert(`Successfully connected ${results.length} repositories!`);
+        // Refresh the repositories list
+        window.location.reload();
       }
       
       setSelectedRepos(new Set());
       setShowGitHubRepos(false);
     } catch (error) {
       console.error('Error connecting repositories:', error);
-      alert('Failed to connect repositories');
+      alert(`Failed to connect repositories: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsConnectingMultiple(false);
     }

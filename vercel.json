@@ -1,0 +1,36 @@
+{
+  "functions": {
+    "src/app/api/**/*": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://monetizeg.dev"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/stripe/webhook",
+      "destination": "/api/stripe/webhook/18_api_stripe_webhook_route"
+    },
+    {
+      "source": "/api/stripe/portal",
+      "destination": "/api/stripe/portal/20_api_stripe_portal_route"
+    }
+  ]
+} 

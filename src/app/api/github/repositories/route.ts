@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { getRepositories } from '@/lib/db';
 
 interface GitHubRepo {
   id: number;
@@ -63,7 +64,17 @@ export async function GET(request: NextRequest) {
 
     const repositories: GitHubRepo[] = await response.json();
     
-    // Transform GitHub API response to our format
+    // Get already connected repositories
+    let connectedRepoNames = new Set<string>();
+    try {
+      const connectedRepos = await getRepositories();
+      connectedRepoNames = new Set(connectedRepos.map(repo => repo.full_name));
+    } catch (error) {
+      // If user not found or other error, just continue without marking connected repos
+      console.log('Could not fetch connected repositories:', error);
+    }
+    
+    // Transform GitHub API response to our format and mark connected ones
     const transformedRepos = repositories.map((repo: GitHubRepo) => ({
       id: repo.id.toString(),
       full_name: repo.full_name,
@@ -82,7 +93,8 @@ export async function GET(request: NextRequest) {
       },
       created_at: repo.created_at,
       updated_at: repo.updated_at,
-      pushed_at: repo.pushed_at
+      pushed_at: repo.pushed_at,
+      isConnected: connectedRepoNames.has(repo.full_name)
     }));
 
     return NextResponse.json(transformedRepos);

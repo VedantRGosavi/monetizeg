@@ -13,3 +13,295 @@ datasource db {
   provider = "postgresql"
   url   = env("DATABASE_URL")
 }
+
+// Core user management
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique @map("clerk_id")
+  email     String   @unique
+  name      String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  repositories    Repository[]
+  campaigns       Campaign[]
+  payments        Payment[]
+  adCreatives     AdCreative[]
+  abTestResults   ABTestResult[]
+
+  @@map("users")
+}
+
+// Repository management
+model Repository {
+  id                    String   @id @default(cuid())
+  userId                String   @map("user_id")
+  fullName              String   @map("full_name")
+  description           String?
+  stars                 Int      @default(0)
+  forks                 Int      @default(0)
+  language              String?
+  isPrivate             Boolean  @default(false) @map("is_private")
+  isMonetized           Boolean  @default(false) @map("is_monetized")
+  adPlacementEnabled    Boolean  @default(false) @map("ad_placement_enabled")
+  adPlacementMaxAds     Int      @default(1) @map("ad_placement_max_ads")
+  adPlacementPosition   String   @default("auto") @map("ad_placement_position")
+  adPlacementCategories String[] @map("ad_placement_categories")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentAnalysis     ContentAnalysis?
+  adPlacements        AdPlacement[]
+  abTests             ABTest[]
+  repositoryMetrics   RepositoryMetric[]
+
+  @@unique([userId, fullName])
+  @@map("repositories")
+}
+
+// Content analysis for ML-powered insights
+model ContentAnalysis {
+  id              String   @id @default(cuid())
+  repositoryId    String   @unique @map("repository_id")
+  readmeContent   String?  @map("readme_content")
+  contentHash     String   @map("content_hash")
+  
+  // ML Analysis Results
+  technologies    Json     @default("[]")    // Detected tech stack
+  topics          Json     @default("[]")    // Topic classification
+  sentimentScore  Float?   @map("sentiment_score")
+  complexityScore Float?   @map("complexity_score")
+  targetAudience  String?  @map("target_audience")
+  
+  // Content Structure Analysis
+  sections        Json     @default("[]")    // README sections
+  codeBlocks      Json     @default("[]")    // Code block positions
+  optimalPlacements Json   @default("[]")    // Suggested ad positions
+  
+  // Processing metadata
+  analysisVersion String   @default("1.0") @map("analysis_version")
+  processedAt     DateTime @default(now()) @map("processed_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@map("content_analysis")
+}
+
+// Campaign management
+model Campaign {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  name             String
+  description      String?
+  status           String    @default("draft") // draft, active, paused, completed
+  budgetTotal      Float     @map("budget_total")
+  budgetDailyLimit Float?    @map("budget_daily_limit")
+  budgetSpent      Float     @default(0) @map("budget_spent")
+  startDate        DateTime  @map("start_date")
+  endDate          DateTime? @map("end_date")
+  
+  // Targeting parameters
+  targetLanguages     String[] @map("target_languages")
+  targetTopics        String[] @map("target_topics")
+  targetAudienceTypes String[] @map("target_audience_types")
+  minRepositoryStars  Int?     @map("min_repository_stars")
+  maxRepositoryStars  Int?     @map("max_repository_stars")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adCreatives  AdCreative[]
+  adPlacements AdPlacement[]
+  abTests      ABTest[]
+
+  @@map("campaigns")
+}
+
+// Ad creative assets
+model AdCreative {
+  id          String   @id @default(cuid())
+  campaignId  String   @map("campaign_id")
+  userId      String   @map("user_id")
+  name        String
+  format      String   // banner, text, card, native
+  content     Json     // Ad content (text, images, etc.)
+  ctaText     String?  @map("cta_text")
+  ctaUrl      String   @map("cta_url")
+  
+  // Performance tracking
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  ctr         Float?   @default(0)
+  
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adPlacements AdPlacement[]
+
+  @@map("ad_creatives")
+}
+
+// Ad placement instances
+model AdPlacement {
+  id             String   @id @default(cuid())
+  repositoryId   String   @map("repository_id")
+  campaignId     String   @map("campaign_id")
+  adCreativeId   String   @map("ad_creative_id")
+  
+  // Placement details
+  position       Int      // Position in README (0-based)
+  section        String?  // Section name where placed
+  placementType  String   @default("auto") @map("placement_type") // auto, manual, test
+  
+  // Performance tracking
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  ctr            Float    @default(0)
+  revenue        Float    @default(0)
+  
+  // A/B testing
+  abTestId       String?  @map("ab_test_id")
+  variant        String?  // A, B, C, etc.
+  
+  isActive       Boolean  @default(true) @map("is_active")
+  startDate      DateTime @default(now()) @map("start_date")
+  endDate        DateTime? @map("end_date")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  repository  Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  campaign    Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  adCreative  AdCreative  @relation(fields: [adCreativeId], references: [id], onDelete: Cascade)
+  abTest      ABTest?     @relation(fields: [abTestId], references: [id])
+
+  @@map("ad_placements")
+}
+
+// A/B Testing framework
+model ABTest {
+  id              String   @id @default(cuid())
+  repositoryId    String   @map("repository_id")
+  campaignId      String   @map("campaign_id")
+  name            String
+  description     String?
+  
+  // Test configuration
+  testType        String   @default("placement") // placement, creative, format
+  variants        Json     // Variant configurations
+  trafficSplit    Json     @default("{}") @map("traffic_split") // % allocation per variant
+  
+  // Test status
+  status          String   @default("draft") // draft, running, completed, paused
+  startDate       DateTime @map("start_date")
+  endDate         DateTime? @map("end_date")
+  
+  // Statistical requirements
+  minSampleSize   Int      @default(100) @map("min_sample_size")
+  confidenceLevel Float    @default(0.95) @map("confidence_level")
+  
+  // Results
+  winningVariant  String?  @map("winning_variant")
+  significance    Float?   // P-value
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  repository    Repository     @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  campaign      Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  adPlacements  AdPlacement[]
+  testResults   ABTestResult[]
+
+  @@map("ab_tests")
+}
+
+// A/B Test results tracking
+model ABTestResult {
+  id           String   @id @default(cuid())
+  abTestId     String   @map("ab_test_id")
+  userId       String?  @map("user_id")
+  variant      String
+  
+  // Event tracking
+  eventType    String   @map("event_type") // impression, click, conversion
+  value        Float?   // Revenue or other numeric value
+  metadata     Json?    // Additional event data
+  
+  // User context
+  userAgent    String?  @map("user_agent")
+  ipAddress    String?  @map("ip_address")
+  referrer     String?
+  
+  timestamp    DateTime @default(now())
+
+  // Relationships
+  abTest ABTest @relation(fields: [abTestId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@map("ab_test_results")
+}
+
+// Repository performance metrics
+model RepositoryMetric {
+  id           String   @id @default(cuid())
+  repositoryId String   @map("repository_id")
+  
+  // Time period
+  date         DateTime @db.Date
+  period       String   @default("daily") // daily, weekly, monthly
+  
+  // Traffic metrics
+  impressions  Int      @default(0)
+  clicks       Int      @default(0)
+  ctr          Float    @default(0)
+  
+  // Revenue metrics
+  revenue      Float    @default(0)
+  rpm          Float    @default(0) // Revenue per mille (thousand impressions)
+  
+  // Engagement metrics
+  avgTimeOnPage Float?  @map("avg_time_on_page")
+  bounceRate    Float?  @map("bounce_rate")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, date, period])
+  @@map("repository_metrics")
+}
+
+// Payment tracking
+model Payment {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  amount                Float
+  currency              String    @default("USD")
+  type                  String    // earning, payout, subscription
+  status                String    @default("pending") // pending, completed, failed, cancelled
+  description           String?
+  metadata              Json      @default("{}")
+  stripePaymentIntentId String?   @map("stripe_payment_intent_id")
+  processedAt           DateTime? @map("processed_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}

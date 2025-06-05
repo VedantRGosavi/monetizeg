@@ -28,7 +28,7 @@ export default function ClientLayout({
           </SignInButton>
         </SignedOut>
       </header>
-      <main className="pt-16">
+      <main className="pt-6">
         {children}
       </main>
     </>

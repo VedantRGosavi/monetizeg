@@ -72,7 +72,19 @@ export function useGitHub() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to connect repository');
+        
+        // Handle specific error cases
+        if (response.status === 404 && errorData.error?.includes('User not found')) {
+          throw new Error('Your account is not properly initialized. Please refresh the page and try again.');
+        }
+        if (response.status === 409) {
+          throw new Error(errorData.error || `Repository ${repo.full_name} is already connected`);
+        }
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please sign in again.');
+        }
+        
+        throw new Error(errorData.error || `Failed to connect ${repo.full_name}`);
       }
 
       const connectedRepo = await response.json();
@@ -86,7 +98,7 @@ export function useGitHub() {
       
       return connectedRepo;
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to connect repository');
+      throw new Error(err instanceof Error ? err.message : `Failed to connect ${repo.full_name}`);
     }
   }, []);
 

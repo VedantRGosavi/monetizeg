@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { createOrUpdateUser } from '@/lib/db';
+import { createInitialUser } from '@/lib/db';
 
 export async function POST() {
   try {
@@ -21,7 +21,7 @@ export async function POST() {
     }
 
     // Create or update user in database
-    const dbUser = await createOrUpdateUser({
+    const dbUser = await createInitialUser({
       id: user.id,
       emailAddresses: user.emailAddresses,
       firstName: user.firstName,

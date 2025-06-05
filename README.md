@@ -14,7 +14,9 @@ A Next.js SaaS platform that enables open-source repositories to monetize throug
 
 Primary Color: Phalo Green
 
+## Live Demo
 
+Visit the live application at [https://monetizeg.dev](https://monetizeg.dev)
 
 
 ================================================
@@ -37,7 +39,9 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result during development.
+
+For production, visit [https://monetizeg.dev](https://monetizeg.dev).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

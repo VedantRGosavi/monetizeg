@@ -45,6 +45,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(repository, { status: 201 });
   } catch (error) {
     console.error('Error creating repository:', error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('User not found')) {
+        return NextResponse.json(
+          { error: 'User not found in database. Please refresh the page and try again.' },
+          { status: 404 }
+        );
+      }
+      if (error.message.includes('already connected')) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 409 }
+        );
+      }
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+      
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to create repository' },
       { status: 500 }
