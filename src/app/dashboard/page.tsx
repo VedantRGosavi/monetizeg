@@ -17,159 +17,184 @@ export default function DashboardPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-4">Please sign in to access your dashboard</h1>
-          <Link href="/" className="text-blue-600 hover:text-blue-800">
-            Return to homepage
-          </Link>
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-center text-white">
+          <h1 className="text-2xl font-mono font-semibold mb-4 lowercase">access denied</h1>
+          <p className="mb-4 lowercase">please sign in to access your dashboard.</p>
+          <Link href="/" className="text-white/70 hover:text-white underline lowercase">go back to home</Link>
         </div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+        {/* Background gradient and noise overlay */}
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+        
+        <div className="relative z-10 text-white lowercase">loading...</div>
+        
+        <style jsx global>{`
+          .bg-phalo-green { background: #123c2b; }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome back, {displayName || 'Developer'}!
-        </h1>
-        <p className="text-gray-600">
-          Here&apos;s an overview of your monetization performance
-        </p>
-      </div>
+    <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden">
+      {/* Background gradient and noise overlay */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Earnings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
-              ${((earnings.totalEarnings || 0) / 100).toFixed(2)}
-            </div>
-            <p className="text-xs text-gray-500">+12% from last month</p>
-          </CardContent>
-        </Card>
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-mono font-semibold text-white mb-2 lowercase">
+            welcome back, {displayName || 'developer'}!
+          </h1>
+          <p className="text-white/70 lowercase">
+            here&apos;s an overview of your monetization performance
+          </p>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Active Repositories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
-              {repositories.length || 0}
-            </div>
-            <p className="text-xs text-gray-500">Connected to GitHub</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Active Ads</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
-              {activeCampaigns.length || 0}
-            </div>
-            <p className="text-xs text-gray-500">Currently running</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Current Plan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {plan?.toUpperCase() || 'FREE'}
-              </Badge>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {plan === 'free' ? '70% revenue share' : 
-               plan === 'pro' ? '85% revenue share' : '90% revenue share'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Link 
-              href="/dashboard/repositories" 
-              className="block p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
-            >
-              <h3 className="font-semibold text-gray-900 mb-1">Connect Repository</h3>
-              <p className="text-sm text-gray-600">Add a new GitHub repository to start monetizing</p>
-            </Link>
-            
-            <Link 
-              href="/dashboard/campaigns" 
-              className="block p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
-            >
-              <h3 className="font-semibold text-gray-900 mb-1">Create Campaign</h3>
-              <p className="text-sm text-gray-600">Set up a new advertising campaign</p>
-            </Link>
-            
-            <Link 
-              href="/pricing" 
-              className="block p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
-            >
-              <h3 className="font-semibold text-gray-900 mb-1">Upgrade Plan</h3>
-              <p className="text-sm text-gray-600">Increase your revenue share with Pro or Enterprise</p>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm text-gray-900">New ad impression on react-components</p>
-                  <p className="text-xs text-gray-500">2 minutes ago</p>
-                </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">total earnings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                ${((earnings.totalEarnings || 0) / 100).toFixed(2)}
               </div>
+              <p className="text-xs text-white/40 lowercase">+12% from last month</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">active repositories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {repositories.length || 0}
+              </div>
+              <p className="text-xs text-white/40 lowercase">connected to github</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">active ads</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {activeCampaigns.length || 0}
+              </div>
+              <p className="text-xs text-white/40 lowercase">currently running</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/70 lowercase">current plan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-white/20 text-white lowercase">
+                  {plan?.toLowerCase() || 'free'}
+                </Badge>
+              </div>
+              <p className="text-xs text-white/40 mt-1 lowercase">
+                {plan === 'free' ? '70% revenue share' : 
+                 plan === 'pro' ? '85% revenue share' : '90% revenue share'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white lowercase">quick actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Link 
+                href="/dashboard/repositories" 
+                className="block p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <h3 className="font-semibold text-white mb-1 lowercase">connect repository</h3>
+                <p className="text-sm text-white/70 lowercase">add a new github repository to start monetizing</p>
+              </Link>
               
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm text-gray-900">Payment processed: $24.50</p>
-                  <p className="text-xs text-gray-500">1 hour ago</p>
-                </div>
-              </div>
+              <Link 
+                href="/dashboard/campaigns" 
+                className="block p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <h3 className="font-semibold text-white mb-1 lowercase">create campaign</h3>
+                <p className="text-sm text-white/70 lowercase">set up a new advertising campaign</p>
+              </Link>
               
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <div>
-                  <p className="text-sm text-gray-900">Repository analytics updated</p>
-                  <p className="text-xs text-gray-500">3 hours ago</p>
+              <Link 
+                href="/pricing" 
+                className="block p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <h3 className="font-semibold text-white mb-1 lowercase">upgrade plan</h3>
+                <p className="text-sm text-white/70 lowercase">increase your revenue share with pro or enterprise</p>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white lowercase">recent activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div>
+                    <p className="text-sm text-white lowercase">new ad impression on react-components</p>
+                    <p className="text-xs text-white/60 lowercase">2 minutes ago</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <div>
+                    <p className="text-sm text-white lowercase">payment processed: $24.50</p>
+                    <p className="text-xs text-white/60 lowercase">1 hour ago</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-white/40 rounded-full"></div>
+                  <div>
+                    <p className="text-sm text-white lowercase">repository analytics updated</p>
+                    <p className="text-xs text-white/60 lowercase">3 hours ago</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+      
+      <style jsx global>{`
+        .bg-phalo-green { background: #123c2b; }
+      `}</style>
     </div>
   );
 }
