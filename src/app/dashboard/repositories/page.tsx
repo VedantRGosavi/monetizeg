@@ -74,7 +74,10 @@ export default function RepositoriesPage() {
         return;
       }
 
-      const redirectUri = `${window.location.origin}/api/auth/github/callback`;
+      // Use environment-specific redirect URI
+      const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URI || 
+        `${window.location.origin}/api/auth/github/callback`;
+      
       const scope = 'repo';
       const state = Math.random().toString(36).substring(2, 15);
       
