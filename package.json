@@ -41,10 +41,12 @@
     "node-cron": "^3.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.57.0",
     "recharts": "^2.15.3",
     "sentiment": "^5.0.2",
     "simple-statistics": "^7.8.8",
     "stripe": "^18.2.0",
+    "svix": "^1.66.0",
     "tailwind-merge": "^3.3.0",
     "zod": "^3.25.49"
   },

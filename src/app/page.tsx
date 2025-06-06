@@ -3,25 +3,53 @@
 import { SignInButton, SignedIn, SignedOut } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [url, setUrl] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (url.trim()) {
+      // Extract repo info from GitHub URL and redirect to dashboard
+      const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (match) {
+        const [, owner, repo] = match;
+        router.push(`/dashboard/repositories?add=${owner}/${repo}`);
+      } else {
+        alert('Please enter a valid GitHub repository URL');
+      }
+    }
+  };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center font-sans bg-phalo-green overflow-hidden">
+    <div className="relative min-h-screen flex flex-col items-center justify-center font-sans bg-[#123c2b] overflow-hidden">
       {/* Background gradient and noise overlay */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
+      <div 
+        aria-hidden 
+        className="pointer-events-none fixed inset-0 z-0" 
+        style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} 
+      />
+      <div 
+        aria-hidden 
+        className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" 
+        style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} 
+      />
 
       {/* Main content */}
       <main className="flex flex-col items-center justify-center flex-1 z-10 w-full px-4">
-        <h1 className="text-6xl sm:text-7xl font-mono font-semibold text-white mb-2 tracking-wide">monetizeG</h1>
-        <p className="text-lg sm:text-xl text-white/70 mb-10 lowercase">monetize open source effortlessly</p>
+        <h1 className="text-6xl sm:text-7xl font-mono font-semibold text-white mb-2 tracking-wide sm:tracking-[0.04em]">
+          monetizeG
+        </h1>
+        <p className="text-lg sm:text-xl text-white/70 mb-10 lowercase">
+          monetize open source effortlessly
+        </p>
         
         <SignedIn>
           <Link 
             href="/dashboard"
-            className="px-6 py-3 bg-white text-phalo-green rounded-lg font-medium hover:bg-opacity-90 transition"
+            className="px-6 py-3 bg-white text-[#123c2b] rounded-lg font-medium hover:bg-opacity-90 transition"
           >
             Go to Dashboard
           </Link>
@@ -29,7 +57,7 @@ export default function Home() {
         
         <SignedOut>
           <SignInButton mode="modal">
-            <button className="px-6 py-3 bg-white text-phalo-green rounded-lg font-medium hover:bg-opacity-90 transition">
+            <button className="px-6 py-3 bg-white text-[#123c2b] rounded-lg font-medium hover:bg-opacity-90 transition">
               Get Started
             </button>
           </SignInButton>
@@ -38,7 +66,7 @@ export default function Home() {
         <div className="mt-12 w-full max-w-2xl">
           <form 
             className="w-full flex items-center bg-white/5 rounded-2xl border border-white/10 shadow-lg mb-4" 
-            onSubmit={e => {e.preventDefault();}}
+            onSubmit={handleSubmit}
           >
             <input
               type="url"
@@ -47,6 +75,7 @@ export default function Home() {
               value={url}
               onChange={e => setUrl(e.target.value)}
               autoFocus
+              required
             />
             <button 
               type="submit" 
@@ -58,7 +87,9 @@ export default function Home() {
               </svg>
             </button>
           </form>
-          <p className="text-xs text-white/40 text-center lowercase">supports github.com repositories</p>
+          <p className="text-xs text-white/40 text-center lowercase">
+            supports github.com repositories
+          </p>
         </div>
       </main>
 
@@ -75,13 +106,6 @@ export default function Home() {
         <span>&bull;</span>
         <Link href="/pricing" className="hover:underline">pricing</Link>
       </footer>
-      
-      <style jsx global>{`
-        .bg-phalo-green { background: #123c2b; }
-        @media (min-width: 640px) {
-          h1 { letter-spacing: 0.04em; }
-        }
-      `}</style>
     </div>
   );
 }

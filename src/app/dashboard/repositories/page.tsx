@@ -151,7 +151,17 @@ export default function RepositoriesPage() {
 
     setIsConnecting(true);
     try {
-      await createRepository(githubUrl);
+      // Parse GitHub URL to extract repository name
+      const url = new URL(githubUrl);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      
+      if (pathParts.length < 2) {
+        throw new Error('Invalid GitHub URL format. Expected: https://github.com/owner/repository');
+      }
+      
+      const fullName = `${pathParts[0]}/${pathParts[1]}`;
+      
+      await createRepository({ fullName });
       setGithubUrl('');
       // Optionally, you can refresh the repositories list here
     } catch (error) {

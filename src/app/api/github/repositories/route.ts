@@ -1,30 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getRepositories } from '@/lib/db';
 import { UserService } from '@/lib/services/user.service';
 
-interface GitHubRepo {
-  id: number;
-  full_name: string;
-  name: string;
-  description: string | null;
-  html_url: string;
-  clone_url: string;
-  ssh_url: string;
-  stargazers_count: number;
-  forks_count: number;
-  language: string | null;
-  private: boolean;
-  owner: {
-    login: string;
-    avatar_url: string;
-  };
-  created_at: string;
-  updated_at: string;
-  pushed_at: string | null;
-}
 
-export async function GET(request: NextRequest) {
+
+export async function GET() {
   try {
     // Verify user is authenticated
     const { userId } = await auth();
@@ -64,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Transform GitHub API response to our format and mark connected ones
-    const transformedRepos = repositories.map((repo: GitHubRepo) => ({
+    const transformedRepos = repositories.map((repo) => ({
       id: repo.id.toString(),
       full_name: repo.full_name,
       name: repo.name,

@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/api/auth(.*)',
   '/api/stripe/webhook(.*)', // Stripe webhooks must be public
+  '/api/clerk/webhook(.*)', // Clerk webhooks must be public
   '/api/intelligent-ads/public(.*)', // Any explicitly public API endpoints
 ]);
 
