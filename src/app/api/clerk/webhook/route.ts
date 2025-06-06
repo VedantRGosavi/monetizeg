@@ -118,6 +118,12 @@ async function handleUserCreated(userData: ClerkWebhookEvent['data']) {
   try {
     console.log('Creating user in database:', userData.id);
     
+    // Validate required data
+    if (!userData.email_addresses || userData.email_addresses.length === 0) {
+      console.error('No email addresses found for user:', userData.id);
+      throw new Error('User email is required');
+    }
+    
     // Check if user already exists
     const existingUser = await getUserByClerkId(userData.id);
     if (existingUser) {
@@ -139,7 +145,16 @@ async function handleUserCreated(userData: ClerkWebhookEvent['data']) {
     console.log('User created successfully in database');
   } catch (error) {
     console.error('Error creating user from webhook:', error);
-    throw error;
+    
+    // Don't throw error for webhook - just log it
+    // Throwing would cause webhook to retry indefinitely
+    if (error instanceof Error) {
+      console.error('Webhook user creation failed:', {
+        userId: userData.id,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 }
 

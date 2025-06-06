@@ -14,30 +14,51 @@ export interface CreateUserData {
 export class UserService {
   // Create or update user (for initial setup without auth requirement)
   static async createOrUpdateInitialUser(clerkUser: CreateUserData): Promise<User> {
-    const email = clerkUser.emailAddresses[0]?.emailAddress
-    if (!email) {
-      throw new Error('User email is required')
+    try {
+      const email = clerkUser.emailAddresses[0]?.emailAddress
+      if (!email) {
+        throw new Error('User email is required')
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        throw new Error('Invalid email format')
+      }
+
+      const name = clerkUser.firstName && clerkUser.lastName 
+        ? `${clerkUser.firstName} ${clerkUser.lastName}` 
+        : clerkUser.firstName || clerkUser.lastName || null
+
+      return await prisma.user.upsert({
+        where: { clerkId: clerkUser.id },
+        update: {
+          email,
+          name,
+          avatarUrl: clerkUser.imageUrl || null,
+          updatedAt: new Date(),
+        },
+        create: {
+          clerkId: clerkUser.id,
+          email,
+          name,
+          avatarUrl: clerkUser.imageUrl || null,
+        },
+      })
+    } catch (error) {
+      console.error('Error in createOrUpdateInitialUser:', error)
+      
+      // Re-throw validation errors as-is
+      if (error instanceof Error && (
+        error.message.includes('User email is required') ||
+        error.message.includes('Invalid email format')
+      )) {
+        throw error
+      }
+      
+      // Wrap database errors
+      throw new Error(`Database error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-
-    const name = clerkUser.firstName && clerkUser.lastName 
-      ? `${clerkUser.firstName} ${clerkUser.lastName}` 
-      : clerkUser.firstName || clerkUser.lastName || null
-
-    return await prisma.user.upsert({
-      where: { clerkId: clerkUser.id },
-      update: {
-        email,
-        name,
-        avatarUrl: clerkUser.imageUrl || null,
-        updatedAt: new Date(),
-      },
-      create: {
-        clerkId: clerkUser.id,
-        email,
-        name,
-        avatarUrl: clerkUser.imageUrl || null,
-      },
-    })
   }
 
   // Create or update user with authentication required

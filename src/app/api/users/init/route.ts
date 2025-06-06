@@ -20,6 +20,14 @@ export async function POST() {
       );
     }
 
+    // Validate required user data
+    if (!user.emailAddresses || user.emailAddresses.length === 0) {
+      return NextResponse.json(
+        { error: 'User email is required' },
+        { status: 400 }
+      );
+    }
+
     // Create or update user in database
     const dbUser = await createInitialUser({
       id: user.id,
@@ -32,8 +40,28 @@ export async function POST() {
     return NextResponse.json(dbUser);
   } catch (error) {
     console.error('Error initializing user:', error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('User email is required')) {
+        return NextResponse.json(
+          { error: 'User email is required' },
+          { status: 400 }
+        );
+      }
+      if (error.message.includes('Database')) {
+        return NextResponse.json(
+          { error: 'Database connection error. Please try again.' },
+          { status: 503 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to initialize user' },
+      { 
+        error: 'Failed to initialize user',
+        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined
+      },
       { status: 500 }
     );
   }

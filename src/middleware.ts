@@ -26,18 +26,24 @@ const isDashboardRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Check if the route should be protected
-  if ((isApiRoute(req) && !isPublicRoute(req)) || isDashboardRoute(req)) {
-    // Use the correct pattern for auth.protect()
-    const protectResponse = await auth.protect();
-    if (protectResponse) {
-      // If auth.protect() returns a response (redirect to sign-in), return it
-      return protectResponse;
+  try {
+    // Check if the route should be protected
+    if ((isApiRoute(req) && !isPublicRoute(req)) || isDashboardRoute(req)) {
+      try {
+        // Use the correct pattern for auth.protect()
+        await auth.protect();
+      } catch (error) {
+        // If auth.protect() throws an error, handle it gracefully
+        console.error('Auth protection error:', error);
+        // Redirect to sign-in for protected routes
+        const signInUrl = new URL('/sign-in', req.url);
+        signInUrl.searchParams.set('redirect_url', req.url);
+        return NextResponse.redirect(signInUrl);
+      }
     }
-  }
-  
-  // If we get here, either the route is public or auth passed
-  const response = NextResponse.next();
+    
+    // If we get here, either the route is public or auth passed
+    const response = NextResponse.next();
   
   // Add comprehensive security headers
   // 1. Basic security headers
@@ -79,6 +85,21 @@ export default clerkMiddleware(async (auth, req) => {
   }
   
   return response;
+  } catch (error) {
+    // Catch any unexpected errors in middleware
+    console.error('Middleware error:', error);
+    
+    // For API routes, return a JSON error
+    if (isApiRoute(req)) {
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+    
+    // For other routes, redirect to error page or continue
+    return NextResponse.next();
+  }
 });
 
 export const config = {
