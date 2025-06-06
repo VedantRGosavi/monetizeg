@@ -60,17 +60,30 @@ export default clerkMiddleware(async (auth, req) => {
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   
   // 4. Add Content-Security-Policy
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; " +
-    "script-src 'self' https://*.clerk.accounts.dev https://cdn.jsdelivr.net https://js.stripe.com 'unsafe-inline'; " +
-    "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
-    "img-src 'self' https://*.clerk.accounts.dev https://img.clerk.com data: blob:; " +
-    "connect-src 'self' https://*.clerk.accounts.dev https://api.stripe.com; " +
-    "frame-src 'self' https://js.stripe.com https://*.clerk.accounts.dev; " +
-    "object-src 'none';"
-  );
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+     // More permissive CSP for development, stricter for production
+   const cspDirectives = isDevelopment ? [
+     "default-src 'self'",
+     "script-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://cdn.jsdelivr.net https://js.stripe.com https://vercel.live https://*.vercel.live http://localhost:* https://localhost:* 'unsafe-inline' 'unsafe-eval'",
+     "style-src 'self' https://fonts.googleapis.com https://vercel.live https://*.vercel.live 'unsafe-inline'",
+     "font-src 'self' https://fonts.gstatic.com",
+     "img-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://img.clerk.com https://vercel.live https://*.vercel.live data: blob:",
+     "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://api.stripe.com https://vercel.live https://*.vercel.live wss://vercel.live wss://*.vercel.live ws://localhost:* ws://127.0.0.1:* http://localhost:* https://localhost:*",
+     "frame-src 'self' https://js.stripe.com https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://vercel.live https://*.vercel.live",
+     "object-src 'none'"
+   ] : [
+     "default-src 'self'",
+     "script-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://cdn.jsdelivr.net https://js.stripe.com 'unsafe-inline'",
+     "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
+     "font-src 'self' https://fonts.gstatic.com",
+     "img-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://img.clerk.com data: blob:",
+     "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev https://api.stripe.com",
+     "frame-src 'self' https://js.stripe.com https://*.clerk.accounts.dev https://*.clerk.dev https://clerk.monetizeg.dev",
+     "object-src 'none'"
+   ];
+  
+  response.headers.set('Content-Security-Policy', cspDirectives.join('; ') + ';');
   
   // 5. Add CORS headers for API routes
   if (isApiRoute(req)) {
