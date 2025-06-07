@@ -28,8 +28,7 @@ export function useUserData() {
   const retryCountRef = useRef(0);
   const maxRetries = 3;
 
-  useEffect(() => {
-    async function fetchUserData() {
+  const fetchUserData = async () => {
       if (!clerkLoaded || !clerkUser) {
         setIsLoading(false);
         return;
@@ -124,6 +123,9 @@ export function useUserData() {
       }
     }
 
+  };
+
+  useEffect(() => {
     fetchUserData();
 
     // Cleanup function
