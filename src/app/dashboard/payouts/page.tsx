@@ -37,7 +37,7 @@ export default function PayoutsPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+      <div className="relative min-h-screen font-sans bg-phalo overflow-hidden flex items-center justify-center">
         {/* Background gradient and noise overlay */}
         <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
         <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
@@ -48,25 +48,19 @@ export default function PayoutsPage() {
           <Link href="/" className="text-white/70 hover:text-white underline lowercase">go back to home</Link>
         </div>
         
-        <style jsx global>{`
-          .bg-phalo-green { background: #123c2b; }
-        `}</style>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden flex items-center justify-center">
+      <div className="relative min-h-screen font-sans bg-phalo overflow-hidden flex items-center justify-center">
         {/* Background gradient and noise overlay */}
         <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
         <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
         
         <div className="relative z-10 text-white lowercase">loading...</div>
         
-        <style jsx global>{`
-          .bg-phalo-green { background: #123c2b; }
-        `}</style>
       </div>
     );
   }
@@ -75,7 +69,7 @@ export default function PayoutsPage() {
   const canRequestPayout = availableBalance >= 50; // $50 minimum
 
   return (
-    <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden">
+    <div className="relative min-h-screen font-sans bg-phalo overflow-hidden">
       {/* Background gradient and noise overlay */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
@@ -244,7 +238,6 @@ export default function PayoutsPage() {
       </div>
       
       <style jsx global>{`
-        .bg-phalo-green { background: #123c2b; }
       `}</style>
     </div>
   );
