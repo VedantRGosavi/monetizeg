@@ -3,8 +3,6 @@ import { auth } from '@clerk/nextjs/server';
 import { getRepositories } from '@/lib/db';
 import { UserService } from '@/lib/services/user.service';
 
-
-
 export async function GET() {
   try {
     // Verify user is authenticated

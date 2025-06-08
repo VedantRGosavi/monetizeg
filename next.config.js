@@ -16,7 +16,7 @@ const nextConfig = {
     },
   },
   // Configure webpack to handle Node.js built-ins
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     // Fixes npm packages that depend on Node.js built-ins
     if (!isServer) {
       // Simple approach to handle Natural.js webworker-threads warning
@@ -32,7 +32,6 @@ const nextConfig = {
       };
       
       // Mark the specific problematic module as ignored
-      const webpack = require('webpack');
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^webworker-threads$/,
