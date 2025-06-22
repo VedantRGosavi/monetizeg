@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function AboutPage() {
   return (
-    <div className="relative min-h-screen font-sans bg-phalo-green overflow-hidden">
+    <div className="relative min-h-screen font-sans bg-phalo overflow-hidden">
       {/* Background gradient and noise overlay */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{background: 'radial-gradient(ellipse at 60% 40%, #1c3c36 0%, #0e1e1a 100%)'}} />
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0 mix-blend-overlay opacity-60" style={{backgroundImage: 'url(https://grainy-gradients.vercel.app/noise.svg)'}} />
@@ -102,9 +102,6 @@ export default function AboutPage() {
         </div>
       </div>
       
-      <style jsx global>{`
-        .bg-phalo-green { background: #123c2b; }
-      `}</style>
     </div>
   );
 } 

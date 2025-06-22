@@ -78,7 +78,7 @@ export class SecurityMonitor {
     }
 
     // Check for patterns that require immediate action
-    this.checkForSuspiciousPatterns(event.ip, event.type);
+    this.checkForSuspiciousPatterns(event.ip);
   }
 
   private static sendToMonitoringService(event: SecurityEvent) {
@@ -87,7 +87,7 @@ export class SecurityMonitor {
     console.error('Security Event (Production):', JSON.stringify(event));
   }
 
-  private static checkForSuspiciousPatterns(ip: string, _eventType: SecurityEventType) {
+  private static checkForSuspiciousPatterns(ip: string) {
     const recentEvents = securityEvents.filter(
       event => event.ip === ip && 
       Date.now() - event.timestamp.getTime() < 15 * 60 * 1000 // Last 15 minutes
