@@ -1,4 +1,4 @@
-#monetizeG
+#monetizeG - Under dev | waitlist |
 
 
 A Next.js SaaS platform that enables open-source repositories to monetize through curated advertising placements in their README files. The webapp should feature: 
